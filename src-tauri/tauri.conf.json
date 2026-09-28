@@ -1,0 +1,20 @@
+{
+  "productName": "SongwriterStudio",
+  "version": "1.0.0",
+  "identifier": "com.yourname.songwriter",
+  "build": {
+    "beforeDevCommand": "",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "",
+    "frontendDist": "../src"
+  },
+  "app": {
+    "windows": [{ "title": "Songwriter Studio", "width": 1100, "height": 720 }],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.png"]
+  }
+}

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Songwriter Studio</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Top blue bar --> 
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="back-link" href="#" id="backLink">← Library</a>
+      <div class="song-title-wrap">
+        <span class="song-title" id="songTitle" contenteditable="true" spellcheck="false">Untitled song</span>
+        <span class="title-caret">▾</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="newProjectTopBtn" title="New project">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+      <button class="icon-btn" id="deleteProjectTopBtn" title="Delete project">🗑️</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
+      <div class="avatar">CC</div>
+    </div>
+  </header>
+
+  <!-- Secondary toolbar -->
+  <div class="toolbar" id="toolbar">
+    <label class="tool-item">
+      BPM
+      <input type="number" id="bpm" value="100" min="40" max="240" />
+    </label>
+    <label class="tool-item">
+      Key
+      <select id="keySelect">
+        <option>C major</option><option>G major</option><option>D major</option>
+        <option>A major</option><option>E major</option><option>F major</option>
+        <option>Bb major</option><option>Eb major</option><option>Ab major</option>
+        <option>A minor</option><option>E minor</option><option>D minor</option>
+      </select>
+    </label>
+    <div class="tool-item">
+      Transpose
+      <button class="tool-btn" id="transposeDown">−</button>
+      <button class="tool-btn" id="transposeUp">+</button>
+    </div>
+    <div class="toolbar-divider"></div>
+    <button class="tool-btn" id="addChordBtn" title="Add chord above cursor">Chord</button>
+    <button class="tool-btn" id="addSectionBtn" title="Add section label">Section</button>
+    <button class="tool-btn" id="boldBtn" title="Bold">B</button>
+    <button class="tool-btn" id="italicBtn" title="Italic"><em>I</em></button>
+    <span class="toolbar-spacer"></span>
+    <button class="tool-btn" id="insertGuitarTabBtn" title="Insert guitar tab">Guitar Tab</button>
+    <button class="tool-btn" id="insertBassTabBtn" title="Insert bass tab">Bass Tab</button>
+    <button class="tool-btn primary" id="saveBtn">Save</button>
+  </div>
+
+  <!-- Start screen / Library -->
+  <div id="startScreen" class="start-screen">
+    <div class="start-header">
+      <div class="greeting" id="greeting">Hello there</div>
+      <div class="avatar" id="startAvatar">SS</div>
+    </div>
+    <div class="library-wrap">
+      <div class="library-title">Your Library</div>
+      <div id="libraryGrid" class="library-grid"></div>
+    </div>
+    <button class="new-project-btn" id="newProjectBtn" title="New project">+</button>
+  </div>
+
+  <!-- Settings modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button class="modal-close" id="settingsClose">✕</button>
+        </div>
+        <div class="modal-body">
+          <section class="settings-section">
+            <h3>Account</h3>
+            <div class="account-row">
+              <div class="avatar avatar-lg" id="settingsAvatar">SS</div>
+              <div class="account-fields">
+                <label>Display name
+                  <input type="text" id="accountName" placeholder="Your name" />
+                </label>
+                <div class="avatar-actions">
+                  <button class="tool-btn" id="uploadAvatarBtn">Upload photo</button>
+                  <button class="tool-btn" id="removeAvatarBtn">Remove</button>
+                </div>
+                <p class="settings-note">Photo is stored in app data. Keep it small (a few hundred KB max).</p>
+              </div>
+            </div>
+            <input type="file" id="avatarFileInput" accept="image/*" hidden />
+          </section>
+          <section class="settings-section">
+            <h3>Style</h3>
+            <div class="theme-row">
+              <label class="theme-option"><input type="radio" name="theme" value="light" id="themeLight" /> Light</label>
+              <label class="theme-option"><input type="radio" name="theme" value="dark" id="themeDark" /> Dark</label>
+            </div>
+            <div class="accent-row">
+              <span>Accent color:</span>
+              <button class="swatch" data-color="#3b82f6" style="background:#3b82f6"></button>
+              <button class="swatch" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+              <button class="swatch" data-color="#10b981" style="background:#10b981"></button>
+              <button class="swatch" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="swatch" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="swatch" data-color="#ec4899" style="background:#ec4899"></button>
+            </div>
+          </section>
+          <section class="settings-section">
+            <h3>Text</h3>
+            <label>Font size
+              <input type="range" id="fontSizeRange" min="12" max="24" step="1" />
+              <span id="fontSizeVal">16</span>px
+            </label>
+            <label>Font
+              <select id="fontFamilySelect">
+                <option value="system">System</option>
+                <option value="serif">Serif</option>
+                <option value="mono">Monospace</option>
+              </select>
+            </label>
+            <label>Text color <input type="color" id="textColorInput" value="#2c2f33" /></label>
+          </section>
+          <section class="settings-section">
+            <h3>Project location</h3>
+            <div class="loc-row">
+              <input type="text" id="projectLocation" placeholder="C:\Users\you\Documents\SongwriterStudio\songs" />
+              <button class="tool-btn" id="browseLocationBtn">Browse</button>
+            </div>
+            <p class="settings-note" id="locationNote">Projects are stored in the app's local storage for now. Real save-to-folder gets wired here in a later stage.</p>
+          </section>
+          <section class="settings-section">
+            <h3>Shortcuts</h3>
+            <div class="shortcuts-grid" id="shortcutsGrid">
+              <!-- rows injected by JS -->
+            </div>
+            <p class="settings-note">Click a key combo then press the keys to change it. Click a row's ✕ to reset to default.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+  <!-- Main two-panel workspace -->
+  <main class="workspace">
+    <!-- Left: editor -->
+    <section class="editor-pane">
+      <div class="editor-scroll">
+        <div id="lyrics" class="lyrics" contenteditable="true" spellcheck="false">
+          <div class="line"><span class="chordwrap"><span class="chord">Am</span>Winter</span>, it came and went</div>
+          <div class="line"><span class="chordwrap"><span class="chord">F</span>Wondering</span> where the time went</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Right: sidebar -->
+    <aside class="side-pane">
+      <div class="side-tabs">
+        <button class="side-tab active" data-side="chords" title="Chords">🎵</button>
+        <button class="side-tab" data-side="recordings" title="Recordings">🎙️</button>
+        <button class="side-tab" data-side="guide" title="Guide">💡</button>
+      </div>
+
+      <!-- Chords -->
+      <div class="side-content active" id="side-chords">
+        <div class="side-title">Chords</div>
+        <div class="chord-key-row">
+          <button class="key-nav" id="keyPrev">↑</button>
+          <select id="chordKeySelect"></select>
+          <button class="key-nav" id="keyNext">↓</button>
+        </div>
+        <div id="chordChart"></div>
+      </div>
+
+      <!-- Recordings -->
+      <div class="side-content" id="side-recordings">
+        <div class="side-title">Recordings</div>
+        <div class="rec-controls">
+          <button class="tool-btn" id="uploadAudioBtn">Upload</button>
+          <button class="rec-btn" id="recBtn">REC</button>
+          <span id="recTimer">0:00</span>
+        </div>
+        <input type="file" id="audioFileInput" accept="audio/*" hidden />
+        <div id="recList" class="rec-list">No recordings yet. Press REC to start.</div>
+      </div>
+
+      <!-- Guide -->
+      <div class="side-content" id="side-guide">
+        <div class="side-title">Guide</div>
+        <div class="guide">
+          <div class="guide-section">
+            <h4>✍️ Lyrics</h4>
+            <p>Just type. Line numbers are automatic — backspace at the start of a line keeps it, empty lines delete normally.</p>
+          </div>
+          <div class="guide-section">
+            <h4>🎸 Chords</h4>
+            <p>Put your cursor on a word, click <b>Chord</b>, type e.g. <code>Am</code> — it floats above that word. Use <b>− / +</b> to transpose all chords.</p>
+          </div>
+          <div class="guide-section">
+            <h4>📄 Sections</h4>
+            <p>Click <b>Section</b> and type a name like <code>Verse</code> or <code>Chorus</code> to add a label.</p>
+          </div>
+          <div class="guide-section">
+            <h4>🎼 Tabs</h4>
+            <p><b>Guitar Tab</b> / <b>Bass Tab</b> inserts tablature at your cursor. To remove one, backspace at the start of the line below it.</p>
+          </div>
+          <div class="guide-section">
+            <h4>🎙️ Recordings</h4>
+            <p>Hit <b>REC</b> to capture a melody, or <b>Upload</b> an audio file. Playback lives right here.</p>
+          </div>
+          <div class="guide-section">
+            <h4>💾 Projects</h4>
+            <p>Everything auto-saves to your library. Rename by clicking the title up top, delete with the trash icon. <b>Save</b> also downloads an HTML copy.</p>
+          </div>
+          <div class="guide-section">
+            <h4>⚙️ Settings</h4>
+            <p>Theme, accent color, font size, font family, and text color — all in the gear menu.</p>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
