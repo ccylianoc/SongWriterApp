@@ -1,25 +1,47 @@
-// ---------- State ----------
+/* =====================================================================
+   Songwriter Studio — main.js
+   Organized by feature area. Each block is self-contained.
+   ===================================================================== */
+
+/* ============================== STATE ============================== */
 let currentKey = 'C';
 const CHORD_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const CHORD_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
 let useFlats = false;
 
-// ---------- Top bar / save ----------
+let savedRange = null;          // caret position saved when editor loses focus
+let mediaRecorder, chunks = [], timerInterval, seconds = 0;
+
+let projects = [];
+try { projects = JSON.parse(localStorage.getItem('sw_projects') || '[]'); } catch (e) { projects = []; }
+let currentProject = null;
+
+const settings = JSON.parse(localStorage.getItem('sw_settings') || '{}');
+
+/* ============================== DOM REFS ============================== */
+const lyricsEl   = document.getElementById('lyrics');
+const startScreen = document.getElementById('startScreen');
+const workspace  = document.querySelector('.workspace');
+const toolbar    = document.getElementById('toolbar');
+const settingsModal = document.getElementById('settingsModal');
+const recBtn     = document.getElementById('recBtn');
+const recTimer   = document.getElementById('recTimer');
+
+/* ============================== SAVE ============================== */
 document.getElementById('saveBtn').addEventListener('click', () => {
   persistCurrent();
   const title = document.getElementById('songTitle').textContent.trim() || 'Untitled song';
-  const body = document.getElementById('lyrics').innerHTML;
-  const blob = new Blob([body], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const body  = document.getElementById('lyrics').innerHTML;
+  const blob  = new Blob([body], { type: 'text/html' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
   a.href = url;
   a.download = title + '.html';
   a.click();
   URL.revokeObjectURL(url);
 });
 
-
-// ---------- Chord insertion ----------
+/* ============================== CHORD INSERTION ============================== */
 document.getElementById('addChordBtn').addEventListener('click', () => {
   const chord = prompt('Enter chord (e.g. Am, F, G7):');
   if (!chord) return;
@@ -27,8 +49,6 @@ document.getElementById('addChordBtn').addEventListener('click', () => {
 });
 
 // Remember caret position when the editor loses focus
-let savedRange = null;
-const lyricsEl = document.getElementById('lyrics');
 lyricsEl.addEventListener('blur', () => {
   const sel = window.getSelection();
   if (sel.rangeCount) savedRange = sel.getRangeAt(0).cloneRange();
@@ -36,7 +56,6 @@ lyricsEl.addEventListener('blur', () => {
 
 // Insert chord at the saved (or current) caret position
 function insertChord(chord) {
-  const lyricsEl = document.getElementById('lyrics');
   const sel = window.getSelection();
 
   // Fall back to saved range from blur, else current selection
@@ -97,33 +116,30 @@ function insertChord(chord) {
   savedRange = null;
 }
 
-// ---------- Section label ----------
+/* ============================== SECTION LABEL ============================== */
 document.getElementById('addSectionBtn').addEventListener('click', () => {
   const name = prompt('Section name (e.g. Verse, Chorus):');
   if (!name) return;
-  const lyrics = document.getElementById('lyrics');
-  lyrics.innerHTML += `<p class="section-label">[${name}]</p>`;
+  lyricsEl.innerHTML += `<p class="section-label">[${name}]</p>`;
 });
 
-// ---------- Bold / italic ----------
+/* ============================== BOLD / ITALIC ============================== */
 document.getElementById('boldBtn').addEventListener('click', () => {
   document.execCommand('bold');
-  document.getElementById('lyrics').focus();
+  lyricsEl.focus();
 });
 document.getElementById('italicBtn').addEventListener('click', () => {
   document.execCommand('italic');
-  document.getElementById('lyrics').focus();
+  lyricsEl.focus();
 });
 
-// ---------- Transpose ----------
+/* ============================== TRANSPOSE ============================== */
 document.getElementById('transposeUp').addEventListener('click', () => transpose(1));
 document.getElementById('transposeDown').addEventListener('click', () => transpose(-1));
 
 function transpose(step) {
-  const chords = document.querySelectorAll('#lyrics .chord');
-  chords.forEach(c => {
-    const name = c.textContent.trim();
-    const transposed = transposeChord(name, step);
+  document.querySelectorAll('#lyrics .chord').forEach(c => {
+    const transposed = transposeChord(c.textContent.trim(), step);
     if (transposed) c.textContent = transposed;
   });
 }
@@ -138,11 +154,7 @@ function transposeChord(chord, step) {
   return scale[idx] + match[2];
 }
 
-// ---------- Recordings ----------
-let mediaRecorder, chunks = [], timerInterval, seconds = 0;
-const recBtn = document.getElementById('recBtn');
-const recTimer = document.getElementById('recTimer');
-
+/* ============================== RECORDINGS ============================== */
 recBtn.addEventListener('click', async () => {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
@@ -192,16 +204,39 @@ function addRecording(url) {
 }
 
 function clearRecordings() {
-  const list = document.getElementById('recList');
-  list.innerHTML = '<div class="empty-rec">No recordings yet</div>';
+  document.getElementById('recList').innerHTML = '<div class="empty-rec">No recordings yet</div>';
 }
 
+// Upload
+document.getElementById('uploadAudioBtn').addEventListener('click', () => {
+  document.getElementById('audioFileInput').click();
+});
+document.getElementById('audioFileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const list = document.getElementById('recList');
+  if (list.textContent.includes('No recordings yet')) list.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'rec-item';
+  const name = file.name.replace(/\.[^.]+$/, '');
+  div.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:4px">${name}</div>
+                   <audio controls src="${url}"></audio>
+                   <button class="rec-del" title="Delete recording">🗑</button>`;
+  div.querySelector('.rec-del').addEventListener('click', () => {
+    div.remove();
+    if (!list.children.length) list.innerHTML = '<div class="empty-rec">No recordings yet</div>';
+  });
+  list.appendChild(div);
+  e.target.value = '';
+});
 
-// ---------- Key selector ----------
+/* ============================== KEY SELECTOR ============================== */
 document.getElementById('keySelect').addEventListener('change', e => {
   currentKey = e.target.value;
 });
-// ---------- Side panel icon tabs ----------
+
+/* ============================== SIDE PANEL TABS ============================== */
 document.querySelectorAll('.side-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
@@ -211,8 +246,7 @@ document.querySelectorAll('.side-tab').forEach(tab => {
   });
 });
 
-
-// ---------- Chords chart ----------
+/* ============================== CHORDS CHART ============================== */
 const KEYS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const TRADS = { '0':'', '1':'m', '2':'m', '3':'', '4':'', '5':'m', '6':'dim' };
 const SEVS = { '0':'Maj7', '1':'m7', '2':'m7', '3':'Maj7', '4':'7', '5':'m7', '6':'m7b5' };
@@ -222,7 +256,7 @@ const keySelect = document.getElementById('chordKeySelect');
 KEYS.forEach(k => keySelect.add(new Option(k + ' major', k)));
 keySelect.value = 'C';
 
-function roman(i, minor) { return ['I','ii','iii','IV','V','vi','vii°'][i]; }
+function roman(i) { return ['I','ii','iii','IV','V','vi','vii°'][i]; }
 
 function buildChart(root) {
   const idx = KEYS.indexOf(root);
@@ -261,32 +295,7 @@ document.getElementById('keyNext').addEventListener('click', () => {
   keySelect.value = KEYS[i]; buildChart(KEYS[i]);
 });
 
-// ---------- Recording upload ----------
-document.getElementById('uploadAudioBtn').addEventListener('click', () => {
-  document.getElementById('audioFileInput').click();
-});
-document.getElementById('audioFileInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const list = document.getElementById('recList');
-  if (list.textContent.includes('No recordings yet')) list.innerHTML = '';
-  const div = document.createElement('div');
-  div.className = 'rec-item';
-  const name = file.name.replace(/\.[^.]+$/, '');
-  div.innerHTML = `<div style="font-size:12px;color:#555;margin-bottom:4px">${name}</div>
-                   <audio controls src="${url}"></audio>
-                   <button class="rec-del" title="Delete recording">🗑</button>`;
-  div.querySelector('.rec-del').addEventListener('click', () => {
-    div.remove();
-    if (!list.children.length) list.innerHTML = '<div class="empty-rec">No recordings yet</div>';
-  });
-  list.appendChild(div);
-  e.target.value = '';
-});
-
-
-// ---------- Start screen / library ----------
+/* ============================== LIBRARY / START SCREEN ============================== */
 const GREETINGS = [
   'Hello there',
   'Welcome back',
@@ -294,13 +303,6 @@ const GREETINGS = [
   'Ready to write something new?',
   "Let's make some music"
 ];
-let projects = [];
-try { projects = JSON.parse(localStorage.getItem('sw_projects') || '[]'); } catch (e) { projects = []; }
-let currentProject = null;
-
-const startScreen = document.getElementById('startScreen');
-const workspace = document.querySelector('.workspace');
-const toolbar = document.getElementById('toolbar');
 
 function showStart() {
   const acc = settings.account || {};
@@ -309,13 +311,12 @@ function showStart() {
   workspace.classList.add('hidden');
   toolbar.classList.add('hidden');
   document.getElementById('backLink').classList.add('hidden');
-  document.querySelector('.song-title-wrap').classList.add('hidden'); 
+  document.querySelector('.song-title-wrap').classList.add('hidden');
   document.getElementById('deleteProjectTopBtn').classList.add('hidden');
   document.getElementById('greeting').textContent =
     GREETINGS[Math.floor(Math.random() * GREETINGS.length)] + name;
   renderLibrary();
 }
-
 
 function showEditor() {
   startScreen.classList.remove('visible');
@@ -323,9 +324,8 @@ function showEditor() {
   toolbar.classList.remove('hidden');
   document.getElementById('backLink').classList.remove('hidden');
   document.getElementById('deleteProjectTopBtn').classList.remove('hidden');
-  document.querySelector('.song-title-wrap').classList.remove('hidden'); 
+  document.querySelector('.song-title-wrap').classList.remove('hidden');
 }
-
 
 function renderLibrary() {
   const grid = document.getElementById('libraryGrid');
@@ -366,11 +366,10 @@ function renderLibrary() {
   });
 }
 
-
 function newProject() {
   currentProject = null;
   document.getElementById('songTitle').textContent = 'Untitled song';
-  document.getElementById('lyrics').innerHTML = '<div class="line"><br></div>';
+  lyricsEl.innerHTML = '<div class="line"><br></div>';
   showEditor();
   const title = document.getElementById('songTitle');
   title.focus();
@@ -381,19 +380,18 @@ function newProject() {
   sel.addRange(range);
 }
 
-
 function openProject(i) {
   const p = projects[i];
   if (!p) return;
   currentProject = i;
   document.getElementById('songTitle').textContent = p.title;
-  document.getElementById('lyrics').innerHTML = p.body || '';
+  lyricsEl.innerHTML = p.body || '';
   showEditor();
 }
 
 function persistCurrent() {
   const title = document.getElementById('songTitle').textContent.trim() || 'Untitled song';
-  const body = document.getElementById('lyrics').innerHTML;
+  const body = lyricsEl.innerHTML;
   const now = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   if (currentProject !== null && projects[currentProject]) {
     projects[currentProject] = { title, body, updated: now };
@@ -404,6 +402,7 @@ function persistCurrent() {
   localStorage.setItem('sw_projects', JSON.stringify(projects));
 }
 
+// Library wiring
 document.getElementById('newProjectBtn').addEventListener('click', newProject);
 document.getElementById('newProjectTopBtn').addEventListener('click', newProject);
 document.getElementById('backLink').addEventListener('click', e => { e.preventDefault(); showStart(); });
@@ -421,27 +420,16 @@ document.getElementById('deleteProjectTopBtn').addEventListener('click', () => {
   if (confirm('Delete "' + p.title + '"? This cannot be undone.')) {
     projects.splice(currentProject, 1);
     localStorage.setItem('sw_projects', JSON.stringify(projects));
-    currentProject = null; 
+    currentProject = null;
     showStart();
     clearRecordings();
   }
 });
 
-// ---------- Settings ----------
-const settingsModal = document.getElementById('settingsModal');
-const settings = JSON.parse(localStorage.getItem('sw_settings') || '{}');
-
+/* ============================== SETTINGS ============================== */
 function openSettings() {
-  const modal = document.getElementById('settingsModal');
-  if (!modal) {
-    console.error('Settings modal not found — check index.html for id="settingsModal"');
-    return;
-  }
-  modal.classList.remove('hidden');
+  settingsModal.classList.remove('hidden');
 }
-
-console.log('SETTINGS LISTENER ATTACHED');
-document.getElementById('settingsBtn').addEventListener('click', openSettings);
 
 function applySettings() {
   const theme = settings.theme || 'light';
@@ -454,10 +442,9 @@ function applySettings() {
   document.documentElement.style.setProperty('--accent', accent);
   document.documentElement.style.setProperty('--accent-hover', accent + 'cc');
 
-  const lyrics = document.getElementById('lyrics');
-  lyrics.style.fontSize = fontSize + 'px';
-  lyrics.style.color = textColor;
-  lyrics.style.fontFamily = fontFamily === 'system' ? '' : fontFamily;
+  lyricsEl.style.fontSize = fontSize + 'px';
+  lyricsEl.style.color = textColor;
+  lyricsEl.style.fontFamily = fontFamily === 'system' ? '' : fontFamily;
 
   document.getElementById('themeLight').checked = theme === 'light';
   document.getElementById('themeDark').checked = theme === 'dark';
@@ -472,11 +459,12 @@ function applySettings() {
   });
   document.getElementById('accountName').value = (settings.account && settings.account.name) || '';
   updateAvatar();
-
 }
 
+// Open / close
 document.getElementById('settingsBtn').addEventListener('click', () => {
-  settingsModal.classList.remove('hidden');
+  openSettings();
+  buildShortcutsUI();
 });
 document.getElementById('settingsClose').addEventListener('click', () => {
   settingsModal.classList.add('hidden');
@@ -485,7 +473,7 @@ settingsModal.addEventListener('click', e => {
   if (e.target === settingsModal) settingsModal.classList.add('hidden');
 });
 
-// Theme radios
+// Theme
 document.querySelectorAll('input[name="theme"]').forEach(r => {
   r.addEventListener('change', () => {
     settings.theme = r.value;
@@ -494,7 +482,7 @@ document.querySelectorAll('input[name="theme"]').forEach(r => {
   });
 });
 
-// Accent swatches
+// Accent
 document.querySelectorAll('.swatch').forEach(s => {
   s.addEventListener('click', () => {
     settings.accent = s.dataset.color;
@@ -535,21 +523,11 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
   document.getElementById('locationNote').textContent = 'Folder picking needs the Tauri dialog plugin — wiring that up in the save-to-folder stage.';
 });
 
-// App opens on the library screen
-showStart();
-
-window.addEventListener('load', () => {
-  try { applySettings(); } catch (e) { console.error('settings error:', e); }
-  try { showStart(); } catch (e) { console.error('start error:', e); }
-});
-
-// ---------- Tab insert ----------
+/* ============================== TAB INSERT ============================== */
 function insertTab(type) {
   const strings = type === 'guitar'
     ? ['e', 'B', 'G', 'D', 'A', 'E']
     : ['G', 'D', 'A', 'E'];
-
-  const lyrics = document.getElementById('lyrics');
 
   // Build the tab block
   const tab = document.createElement('div');
@@ -576,12 +554,12 @@ function insertTab(type) {
     anchor = node && node.closest ? node.closest('.line, .tab-block') : null;
   }
 
-  if (anchor && anchor.parentNode === lyrics) {
-    lyrics.insertBefore(tab, anchor.nextSibling);
-    lyrics.insertBefore(fresh, tab.nextSibling);
+  if (anchor && anchor.parentNode === lyricsEl) {
+    lyricsEl.insertBefore(tab, anchor.nextSibling);
+    lyricsEl.insertBefore(fresh, tab.nextSibling);
   } else {
-    lyrics.appendChild(tab);
-    lyrics.appendChild(fresh);
+    lyricsEl.appendChild(tab);
+    lyricsEl.appendChild(fresh);
   }
 
   // Park the caret in the fresh line
@@ -590,7 +568,7 @@ function insertTab(type) {
   range.collapse(true);
   sel.removeAllRanges();
   sel.addRange(range);
-  lyrics.focus();
+  lyricsEl.focus();
 }
 
 function unwrapTabs() {
@@ -601,14 +579,11 @@ function unwrapTabs() {
   });
 }
 
-
 document.getElementById('insertGuitarTabBtn').addEventListener('click', () => insertTab('guitar'));
 document.getElementById('insertBassTabBtn').addEventListener('click', () => insertTab('bass'));
 
-// ---------- Line structure guard ----------
-
-// Backspace at the very start of a line: keep the line and its number
-// ---------- Enter: always make a numbered .line ----------
+/* ============================== LINE STRUCTURE ============================== */
+// Enter: always make a numbered .line
 lyricsEl.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   e.preventDefault();
@@ -635,7 +610,7 @@ lyricsEl.addEventListener('keydown', e => {
   lyricsEl.focus();
 });
 
-// ---------- DOM normalizer ----------
+// DOM normalizer
 function normalizeLyrics() {
   // Lift any block elements nested inside .line out as siblings
   lyricsEl.querySelectorAll('.line > .line, .line > .tab-block, .line > div').forEach(block => {
@@ -661,11 +636,8 @@ function normalizeLyrics() {
 }
 
 lyricsEl.addEventListener('input', normalizeLyrics);
-window.addEventListener('load', normalizeLyrics);
 
-
-
-// ---------- Account ----------
+/* ============================== ACCOUNT ============================== */
 function updateAvatar() {
   const acc = settings.account || {};
   const name = acc.name || '';
@@ -715,14 +687,14 @@ document.getElementById('removeAvatarBtn').addEventListener('click', () => {
   updateAvatar();
 });
 
-// ---------- Shortcuts (remappable) ----------
+/* ============================== SHORTCUTS ============================== */
 const DEFAULT_SHORTCUTS = {
   guitarTab:  { key: 'g', shift: false },
-  bassTab:     { key: 'B', shift: true  },
-  addChord:    { key: 'k', shift: false },
-  save:         { key: 's', shift: false },
-  bold:         { key: 'b', shift: false },
-  italic:       { key: 'i', shift: false },
+  bassTab:    { key: 'B', shift: true  },
+  addChord:   { key: 'k', shift: false },
+  save:       { key: 's', shift: false },
+  bold:       { key: 'b', shift: false },
+  italic:     { key: 'i', shift: false },
 };
 
 function getShortcuts() {
@@ -797,22 +769,17 @@ document.addEventListener('keydown', e => {
 
   // Save works anywhere
   if (combo.key === s.save.key && combo.shift === s.save.shift) {
-
     e.preventDefault();
     document.getElementById('saveBtn').click();
     return;
   }
 
   // Rest only when the editor is focused
-  if (document.activeElement !== document.getElementById('lyrics')) return;
+  if (document.activeElement !== lyricsEl) return;
 
   if (combo.key === s.guitarTab.key && combo.shift === s.guitarTab.shift) {
-
     e.preventDefault(); insertTab('guitar');
   } else if (combo.key === s.bassTab.key && combo.shift === s.bassTab.shift) {
-
-
-
     e.preventDefault(); insertTab('bass');
   } else if (combo.key === s.addChord.key && combo.shift === s.addChord.shift) {
     e.preventDefault();
@@ -825,21 +792,18 @@ document.addEventListener('keydown', e => {
       if (input) input.focus();
     }
   } else if (combo.key === s.bold.key && combo.shift === s.bold.shift) {
-
-
-
     e.preventDefault(); document.getElementById('boldBtn').click();
   } else if (combo.key === s.italic.key && combo.shift === s.italic.shift) {
-
-
-
     e.preventDefault(); document.getElementById('italicBtn').click();
   }
 });
 
-// Build the shortcuts list when settings opens
-document.getElementById('settingsBtn').addEventListener('click', buildShortcutsUI);
-window.addEventListener('load', () => {
-  if (typeof buildShortcutsUI === 'function') buildShortcutsUI();
-});
+/* ============================== INIT ============================== */
+showStart();
 
+window.addEventListener('load', () => {
+  try { applySettings(); } catch (e) { console.error('settings error:', e); }
+  try { showStart(); } catch (e) { console.error('start error:', e); }
+  try { normalizeLyrics(); } catch (e) { console.error('normalize error:', e); }
+  try { buildShortcutsUI(); } catch (e) { console.error('shortcuts error:', e); }
+});
