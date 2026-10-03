@@ -71,6 +71,17 @@ body {
 .tool-btn.primary:hover { background: #2f6fe0; }
 .toolbar-divider { width: 1px; height: 22px; background: #e3e6ea; }
 .toolbar-spacer { flex: 1; }
+.tool-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+  background: var(--hover);
+}
+.tool-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 
 /* ============================== WORKSPACE & EDITOR ============================== */
 .workspace {
@@ -106,6 +117,8 @@ body {
   user-select: none;
   pointer-events: none;
 }
+.line.chord-line { line-height: 2.2; }
+.line.chord-line .chordwrap { margin-right: 1.5em; }
 
 /* ============================== CHORDS ============================== */
 .chord-slot {
@@ -395,6 +408,7 @@ body {
   user-select: none;
   pointer-events: none;
 }
+.line-spacer::before { content: none; }
 
 /* ============================== CHORDS ============================== */
 .chord-slot {
@@ -447,6 +461,7 @@ body {
   display: flex;
   flex-direction: column;
 }
+.side-pane.collapsed { display: none; }
 .side-tabs {
   display: flex;
   border-bottom: 1px solid #e3e6ea;
@@ -605,6 +620,62 @@ body {
 }
 .shortcut-row .sc-reset:hover { color: var(--text); }
 
+/* ===== Print / PDF ===== */
+.print-root { display: none; }
+
+@media print {
+  /* Hide everything except the print root */
+  body * { visibility: hidden; }
+  .print-root, .print-root * { visibility: visible; }
+  .print-root {
+    display: block;
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    padding: 20px 24px;
+  }
+  .print-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .print-meta {
+    font-size: 12px;
+    color: #000000;
+    margin-bottom: 20px;
+  }
+  .print-body {
+    font-size: 14px;
+    line-height: 2.2;
+    color: #000000;
+  }
+  /* Chords float above their words, keep them visible */
+  .print-body .chord {
+    position: static;
+    display: inline-block;
+    color: #000;
+    font-weight: 700;
+    font-size: 12px;
+    margin-right: 4px;
+  }
+  /* Tabs keep their monospace layout */
+  .print-body .tab-block {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    white-space: pre;
+    border: none;
+    background: none;
+    padding: 4px 0;
+    margin: 8px 0;
+  }
+  /* Section labels */
+  .print-body .section-label {
+    font-weight: 700;
+    margin-top: 16px;
+  }
+}
+
+
 /* ============================== MODAL ============================== */
 .modal-overlay {
   position: fixed; inset: 0;
@@ -675,6 +746,14 @@ body {
   --bg:#171a1e; --panel:#1f2328; --side:#1b1f24; --border:#343a42;
   --text:#e6e9ed; --muted:#8b949e; --accent:#4f8ef7; --accent-hover:#3d7df0;
   --input:#262b31; --hover:#2a2f36;
+}
+.mono-color-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; font-size: 13px;
+}
+.mono-color-row input[type="color"] {
+  width: 40px; height: 28px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--input); cursor: pointer;
 }
 
 /* ============================== THEME OVERRIDES ============================== */

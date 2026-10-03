@@ -34,11 +34,23 @@
     </label>
     <label class="tool-item">
       Key
-      <select id="keySelect">
-        <option>C major</option><option>G major</option><option>D major</option>
-        <option>A major</option><option>E major</option><option>F major</option>
-        <option>Bb major</option><option>Eb major</option><option>Ab major</option>
-        <option>A minor</option><option>E minor</option><option>D minor</option>
+      <select id="scaleRootSelect">
+        <option>C</option><option>C#</option><option>D</option><option>D#</option>
+        <option>E</option><option>F</option><option>F#</option><option>G</option>
+        <option>G#</option><option>A</option><option>A#</option><option>B</option>
+      </select>
+    </label>
+    <label class="tool-item">
+      Mode
+      <select id="scaleModeSelect">
+        <option value="major">Major</option>
+        <option value="minor">Minor</option>
+      </select>
+    </label>
+    <label class="tool-item">
+      Scale
+      <select id="scaleTypeSelect">
+        <!-- populated by JS based on mode -->
       </select>
     </label>
     <div class="tool-item">
@@ -51,9 +63,12 @@
     <button class="tool-btn" id="addSectionBtn" title="Add section label">Section</button>
     <button class="tool-btn" id="boldBtn" title="Bold">B</button>
     <button class="tool-btn" id="italicBtn" title="Italic"><em>I</em></button>
-    <span class="toolbar-spacer"></span>
     <button class="tool-btn" id="insertGuitarTabBtn" title="Insert guitar tab">Guitar Tab</button>
     <button class="tool-btn" id="insertBassTabBtn" title="Insert bass tab">Bass Tab</button>
+    <span class="toolbar-spacer"></span>
+    <button class="tool-btn" id="toggleSideBtn" title="Toggle side panel">☰ Panel</button>
+    <button class="tool-btn" id="viewModeBtn" title="Toggle viewing mode">👁 View</button>
+    <button class="tool-btn" id="printBtn" title="Print / Save as PDF">🖨 Print</button>
     <button class="tool-btn primary" id="saveBtn">Save</button>
   </div>
 
@@ -100,6 +115,12 @@
             <div class="theme-row">
               <label class="theme-option"><input type="radio" name="theme" value="light" id="themeLight" /> Light</label>
               <label class="theme-option"><input type="radio" name="theme" value="dark" id="themeDark" /> Dark</label>
+              <label class="theme-option"><input type="radio" name="theme" value="mono-light" id="themeMonoLight"><span>🎨 Mono Light</span></label>
+              <label class="theme-option"><input type="radio" name="theme" value="mono-dark" id="themeMonoDark"><span>🎨 Mono Dark</span></label>
+            </div>
+            <div class="mono-color-row">
+              <span>Mono base color:</span>
+              <input type="color" id="monoColorInput" value="#3b82f6" />
             </div>
             <div class="accent-row">
               <span>Accent color:</span>
@@ -124,7 +145,6 @@
                 <option value="mono">Monospace</option>
               </select>
             </label>
-            <label>Text color <input type="color" id="textColorInput" value="#2c2f33" /></label>
           </section>
           <section class="settings-section">
             <h3>Project location</h3>
@@ -140,6 +160,10 @@
               <!-- rows injected by JS -->
             </div>
             <p class="settings-note">Click a key combo then press the keys to change it. Click a row's ✕ to reset to default.</p>
+            <div class="settings-section">
+              <h3>Version</h3>
+              <p class="settings-note" id="versionLabel"></p>
+            </div>
           </section>
         </div>
       </div>
@@ -150,10 +174,8 @@
     <!-- Left: editor -->
     <section class="editor-pane">
       <div class="editor-scroll">
-        <div id="lyrics" class="lyrics" contenteditable="true" spellcheck="false">
-          <div class="line"><span class="chordwrap"><span class="chord">Am</span>Winter</span>, it came and went</div>
-          <div class="line"><span class="chordwrap"><span class="chord">F</span>Wondering</span> where the time went</div>
-        </div>
+        <div id="lyrics" class="lyrics" contenteditable="true" spellcheck="false"></div>
+          <div class="line"><br></div>
       </div>
     </section>
 
@@ -171,11 +193,25 @@
         <div class="side-title">Chords</div>
         <div class="chord-key-row">
           <button class="key-nav" id="keyPrev">↑</button>
-          <select id="chordKeySelect"></select>
+          <select id="chordRootSelect">
+            <option>C</option><option>C#</option><option>D</option><option>D#</option>
+            <option>E</option><option>F</option><option>F#</option><option>G</option>
+            <option>G#</option><option>A</option><option>A#</option><option>B</option>
+          </select>
           <button class="key-nav" id="keyNext">↓</button>
+        </div>
+        <div class="chord-key-row">
+          <select id="chordModeSelect">
+            <option value="major">Major</option>
+            <option value="minor">Minor</option>
+          </select>
+          <select id="chordScaleTypeSelect">
+            <!-- populated by JS based on mode -->
+          </select>
         </div>
         <div id="chordChart"></div>
       </div>
+
 
       <!-- Recordings -->
       <div class="side-content" id="side-recordings">

@@ -2,8 +2,11 @@
    Songwriter Studio — main.js
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
-
+//============================== Version =================================
+const APP_VERSION = '1.2.0';
 /* ============================== STATE ============================== */
+
+
 let currentKey = 'C';
 const CHORD_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const CHORD_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
@@ -41,11 +44,244 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
+// ---------- Chord validation ----------
+const ROOT_NOTES = ['A','B','C','D','E','F','G'];
+const CHORD_EXTENSIONS = [
+  '', 'm', 'maj', 'min', 'dim', 'aug', 'sus', 'sus2', 'sus4',
+  '7', 'm7', 'maj7', 'min7', 'dim7', 'aug7', 'm7b5', '7b5', '7#5',
+  '9', 'm9', 'maj9', 'add9', '6', 'm6', 'maj6', '11', '13',
+  '5', '6/9', '7sus4', '9sus4', '13sus4', '7#9', '7b9', '7#11', '7b13'
+];
+
+function validateChord(input) {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // Check 1: root note (auto-capitalize)
+  const first = trimmed[0].toUpperCase();
+  const rest = trimmed.slice(1);
+  if (!ROOT_NOTES.includes(first)) return null;
+
+  // Allow sharp/flat after root, e.g. C#, Bb
+  let root = first;
+  let ext = rest;
+  if (rest[0] === '#' || rest[0] === 'b') {
+    root = first + rest[0];
+    ext = rest.slice(1);
+  }
+
+  // Normalize common variants
+  const normalized = ext.replace('min', 'm').replace('major', 'maj');
+  if (!CHORD_EXTENSIONS.includes(normalized)) return null;
+
+  return root + normalized;
+}
+
+/* ============================== SCALES & CHORDS ============================== */
+const KEYS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const SCALES_MAJ = {
+  'natural':   { mode: 'major', intervals: [0,2,4,5,7,9,11] },
+  'lydian':    { mode: 'major', intervals: [0,2,4,6,7,9,11] },
+  'mixolydian':{ mode: 'major', intervals: [0,2,4,5,7,9,10] },
+  'pentatonic':{ mode: 'major', intervals: [0,2,4,7,9] },
+  'blues':     { mode: 'major', intervals: [0,2,3,4,7,9] },
+  'bebop':     { mode: 'major', intervals: [0,2,4,5,7,8,9,11] },
+  'whole-tone':{ mode: 'major', intervals: [0,2,4,6,8,10] },
+  'chromatic': { mode: 'major', intervals: [0,1,2,3,4,5,6,7,8,9,10,11] },
+};
+
+const SCALES_MIN = {
+  'natural':   { mode: 'minor', intervals: [0,2,3,5,7,8,10] },
+  'harmonic':  { mode: 'minor', intervals: [0,2,3,5,7,8,11] },
+  'melodic':   { mode: 'minor', intervals: [0,2,3,5,7,9,11] },
+  'dorian':    { mode: 'minor', intervals: [0,2,3,5,7,9,10] },
+  'phrygian':  { mode: 'minor', intervals: [0,1,3,5,7,8,10] },
+  'locrian':   { mode: 'minor', intervals: [0,1,3,5,6,8,10] },
+  'pentatonic':{ mode: 'minor', intervals: [0,3,5,7,10] },
+  'blues':     { mode: 'minor', intervals: [0,3,5,6,7,10] },
+  'bebop':     { mode: 'minor', intervals: [0,2,3,5,7,9,10,11] },
+  'dorian-b2': { mode: 'minor', intervals: [0,1,3,5,7,9,10] },
+  'phrygian-dominant': { mode: 'minor', intervals: [0,1,4,5,7,8,10] },
+  'hungarian-minor':   { mode: 'minor', intervals: [0,2,3,6,7,8,11] },
+  'double-harmonic':   { mode: 'minor', intervals: [0,1,4,5,7,8,11] },
+  'altered':   { mode: 'minor', intervals: [0,1,3,4,6,8,10] },
+  'diminished':{ mode: 'minor', intervals: [0,2,3,5,6,8,9,11] },
+};
+
+const SCALE_TYPES = {
+  major: Object.keys(SCALES_MAJ),
+  minor: Object.keys(SCALES_MIN),
+};
+
+// Combined lookup so buildChart can resolve any selected scale by name + mode
+function getScale(mode, name) {
+  return (mode === 'minor' ? SCALES_MIN : SCALES_MAJ)[name];
+}
+
+
+const ROMAN_MAJOR = ['I','ii','iii','IV','V','vi','vii°'];
+const ROMAN_MINOR = ['i','ii°','III','iv','v','VI','VII'];
+
+let currentRoot = 'C';
+let currentMode  = 'major';
+let currentScale = 'natural';
+
+
+function triadQuality(root, third, fifth) {
+  const t = (KEYS.indexOf(third) - KEYS.indexOf(root) + 12) % 12;
+  const f = (KEYS.indexOf(fifth) - KEYS.indexOf(root) + 12) % 12;
+  if (t === 4 && f === 7) return '';
+  if (t === 3 && f === 7) return 'm';
+  if (t === 4 && f === 8) return 'aug';
+  if (t === 3 && f === 6) return 'dim';
+  if (t === 4 && f === 6) return 'sus4';
+  if (t === 2 && f === 7) return 'sus2';
+  return '';
+}
+
+function seventhQuality(root, third, fifth, seventh) {
+  const t = (KEYS.indexOf(third) - KEYS.indexOf(root) + 12) % 12;
+  const f = (KEYS.indexOf(fifth) - KEYS.indexOf(root) + 12) % 12;
+  const s = (KEYS.indexOf(seventh) - KEYS.indexOf(root) + 12) % 12;
+  if (t === 4 && f === 7 && s === 11) return 'Maj7';
+  if (t === 3 && f === 7 && s === 10) return 'm7';
+  if (t === 4 && f === 7 && s === 10) return '7';
+  if (t === 3 && f === 6 && s === 10) return 'm7b5';
+  if (t === 3 && f === 6 && s === 9)  return 'dim7';
+  if (t === 4 && f === 8 && s === 11) return 'Maj7#5';
+  return triadQuality(root, third, fifth) + '7';
+}
+
+function buildChart(root, mode, scaleName) {
+  const scale = getScale(mode, scaleName);
+  if (!scale) return;
+  const idx = KEYS.indexOf(root);
+  const notes = scale.intervals.map(semi => KEYS[(idx + semi) % 12]);
+  const n = notes.length;
+  const roman = mode === 'minor' ? ROMAN_MINOR : ROMAN_MAJOR;
+
+  let rows = [];
+  for (let i = 0; i < n; i++) {
+    const third   = notes[(i + 2) % n];
+    const fifth   = notes[(i + 4) % n];
+    const seventh = notes[(i + 6) % n];
+    rows.push([
+      roman[i % roman.length],
+      notes[i] + triadQuality(notes[i], third, fifth),
+      notes[i] + seventhQuality(notes[i], third, fifth, seventh),
+    ]);
+  }
+
+  // Borrowed from the parallel natural scale (opposite mode)
+  const oppMode = mode === 'minor' ? 'major' : 'minor';
+  const oppScale = getScale(oppMode, 'natural');
+  const oppNotes = oppScale.intervals.map(semi => KEYS[(idx + semi) % 12]);
+  const oppRoman = oppMode === 'minor' ? ROMAN_MINOR : ROMAN_MAJOR;
+  const borrowed = oppNotes.map((note, i) => {
+    const third = oppNotes[(i + 2) % oppNotes.length];
+    const fifth = oppNotes[(i + 4) % oppNotes.length];
+    return [oppRoman[i % oppRoman.length], note + triadQuality(note, third, fifth)];
+  });
+
+  let html = '<table class="chord-table"><tr><th></th><th>Triad</th><th>Seventh</th></tr>';
+  rows.forEach(r => {
+    html += `<tr><td>${r[0]}</td><td class="chord-name">${r[1]}</td><td class="chord-name">${r[2]}</td></tr>`;
+  });
+  html += '</table>';
+  html += `<div style="font-weight:600;color:#999;font-size:11px;margin-bottom:4px">Borrowed (from ${root} ${oppMode})</div>`;
+  html += '<table class="chord-table"><tr><th></th><th>Chord</th></tr>';
+  borrowed.forEach(b => {
+    html += `<tr><td>${b[0]}</td><td class="chord-name">${b[1]}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('chordChart').innerHTML = html;
+}
+
+
+function populateScaleTypes() {
+  const mode = document.getElementById('scaleModeSelect').value;
+  currentMode = mode;
+  const typeSel = document.getElementById('scaleTypeSelect');
+  typeSel.innerHTML = '';
+  SCALE_TYPES[mode].forEach(name => {
+    typeSel.add(new Option(name.replace(/-/g, ' '), name));
+  });
+  if (!SCALE_TYPES[mode].includes(currentScale)) {
+    currentScale = SCALE_TYPES[mode][0];
+  }
+  typeSel.value = currentScale;
+  syncChordMenu();
+}
+
+function syncChordMenu() {
+  document.getElementById('chordRootSelect').value = currentRoot;
+  document.getElementById('chordModeSelect').value = currentMode;
+  const cType = document.getElementById('chordScaleTypeSelect');
+  cType.innerHTML = '';
+  SCALE_TYPES[currentMode].forEach(name => {
+    cType.add(new Option(name.replace(/-/g, ' '), name));
+  });
+  cType.value = currentScale;
+  buildChart(currentRoot, currentMode, currentScale);
+}
+
+
+// Toolbar wiring
+document.getElementById('scaleRootSelect').addEventListener('change', e => {
+  currentRoot = e.target.value;
+  syncChordMenu();
+});
+document.getElementById('scaleModeSelect').addEventListener('change', () => {
+  populateScaleTypes();   // sets currentMode from the dropdown
+  syncChordMenu();
+});
+document.getElementById('scaleTypeSelect').addEventListener('change', e => {
+  currentScale = e.target.value;
+  syncChordMenu();
+});
+
+// Chord menu wiring
+document.getElementById('chordRootSelect').addEventListener('change', e => {
+  currentRoot = e.target.value;
+  document.getElementById('scaleRootSelect').value = currentRoot;
+  syncChordMenu();
+});
+document.getElementById('chordModeSelect').addEventListener('change', () => {
+  document.getElementById('scaleModeSelect').value = document.getElementById('chordModeSelect').value;
+  populateScaleTypes();
+  syncChordMenu();
+});
+document.getElementById('chordScaleTypeSelect').addEventListener('change', e => {
+  currentScale = e.target.value;
+  document.getElementById('scaleTypeSelect').value = currentScale;
+  syncChordMenu();
+});
+
+// Key prev/next
+document.getElementById('keyPrev').addEventListener('click', () => {
+  const i = (KEYS.indexOf(currentRoot) - 1 + 12) % 12;
+  currentRoot = KEYS[i];
+  document.getElementById('scaleRootSelect').value = currentRoot;
+  syncChordMenu();
+});
+document.getElementById('keyNext').addEventListener('click', () => {
+  const i = (KEYS.indexOf(currentRoot) + 1) % 12;
+  currentRoot = KEYS[i];
+  document.getElementById('scaleRootSelect').value = currentRoot;
+  syncChordMenu();
+});
+
 /* ============================== CHORD INSERTION ============================== */
 document.getElementById('addChordBtn').addEventListener('click', () => {
   const chord = prompt('Enter chord (e.g. Am, F, G7):');
   if (!chord) return;
-  insertChord(chord);
+  const valid = validateChord(chord);
+  if (!valid) {
+    alert('That doesn\'t look like a valid chord. Try e.g. Am, F, G7, Cmaj7.');
+    return;
+  }
+  insertChord(valid);
 });
 
 // Remember caret position when the editor loses focus
@@ -115,6 +351,65 @@ function insertChord(chord) {
   lyricsEl.focus();
   savedRange = null;
 }
+/* ============================ PASTE CONVERTION ============================ */
+function alignChordsToLyrics(chordLine, lyricLine) {
+  // chordLine: "  A        F#m     D  E  A"
+  // lyricLine: "When the night has come"
+  // returns [{ chord, word }]
+  const pairs = [];
+  let wordStart = -1, word = '';
+  const words = [];
+
+  // Build a list of words with their start columns
+  for (let i = 0; i <= lyricLine.length; i++) {
+    const ch = lyricLine[i] || ' ';
+    if (ch !== ' ') {
+      if (wordStart === -1) wordStart = i;
+      word += ch;
+    } else if (wordStart !== -1) {
+      words.push({ word, start: wordStart });
+      wordStart = -1; word = '';
+    }
+  }
+
+  // Match each chord to the nearest word at or before its column
+  const chordRe = /[A-G][#b]?(m|maj|min|dim|aug|sus|7|9|11|13|add|sus2|sus4|6|5)*/g;
+  let m;
+  while ((m = chordRe.exec(chordLine)) !== null) {
+    const col = m.index;
+    let best = null;
+    for (const w of words) {
+      if (w.start <= col) best = w;
+      else break;
+    }
+    if (best) pairs.push({ chord: m[0], word: best.word });
+  }
+  return pairs;
+}
+
+/* ============================== VIEWING MODE ============================== */
+const viewModeBtn = document.getElementById('viewModeBtn');
+let viewMode = false;
+
+const EDIT_TOOL_IDS = [
+  'addChordBtn', 'addSectionBtn', 'boldBtn', 'italicBtn',
+  'insertGuitarTabBtn', 'insertBassTabBtn',
+  'bpm', 'scaleRootSelect', 'scaleModeSelect', 'scaleTypeSelect'
+];
+
+function setViewMode(on) {
+  viewMode = on;
+  lyricsEl.contentEditable = on ? 'false' : 'true';
+  viewModeBtn.textContent = on ? '✏️ Edit' : '👁 View';
+  viewModeBtn.classList.toggle('active', on);
+
+  EDIT_TOOL_IDS.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = on;
+  });
+}
+
+viewModeBtn.addEventListener('click', () => setViewMode(!viewMode));
 
 /* ============================== SECTION LABEL ============================== */
 document.getElementById('addSectionBtn').addEventListener('click', () => {
@@ -138,7 +433,13 @@ document.getElementById('transposeUp').addEventListener('click', () => transpose
 document.getElementById('transposeDown').addEventListener('click', () => transpose(-1));
 
 function transpose(step) {
-  document.querySelectorAll('#lyrics .chord').forEach(c => {
+  const idx = KEYS.indexOf(currentRoot);
+  currentRoot = KEYS[(idx + step + 12) % 12];
+  document.getElementById('scaleRootSelect').value = currentRoot;
+  syncChordMenu();
+  // transpose the lyric chords
+  const chords = document.querySelectorAll('#lyrics .chord');
+  chords.forEach(c => {
     const transposed = transposeChord(c.textContent.trim(), step);
     if (transposed) c.textContent = transposed;
   });
@@ -231,12 +532,13 @@ document.getElementById('audioFileInput').addEventListener('change', e => {
   e.target.value = '';
 });
 
-/* ============================== KEY SELECTOR ============================== */
-document.getElementById('keySelect').addEventListener('change', e => {
-  currentKey = e.target.value;
+/* ============================== SIDE PANEL ============================== */
+// Toggle side panel
+document.getElementById('toggleSideBtn').addEventListener('click', () => {
+  document.querySelector('.side-pane').classList.toggle('collapsed');
 });
 
-/* ============================== SIDE PANEL TABS ============================== */
+// Side panel tabs
 document.querySelectorAll('.side-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
@@ -245,56 +547,6 @@ document.querySelectorAll('.side-tab').forEach(tab => {
     document.getElementById('side-' + tab.dataset.side).classList.add('active');
   });
 });
-
-/* ============================== CHORDS CHART ============================== */
-const KEYS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const TRADS = { '0':'', '1':'m', '2':'m', '3':'', '4':'', '5':'m', '6':'dim' };
-const SEVS = { '0':'Maj7', '1':'m7', '2':'m7', '3':'Maj7', '4':'7', '5':'m7', '6':'m7b5' };
-const BORROWED = { '0':'m', '1':'dim', '3':'m', '4':'m', '6':'' };
-const BORROW_NAMES = ['i','ii°','bIII','iv','v','bVI','bVII'];
-const keySelect = document.getElementById('chordKeySelect');
-KEYS.forEach(k => keySelect.add(new Option(k + ' major', k)));
-keySelect.value = 'C';
-
-function roman(i) { return ['I','ii','iii','IV','V','vi','vii°'][i]; }
-
-function buildChart(root) {
-  const idx = KEYS.indexOf(root);
-  let rows = [];
-  for (let i = 0; i < 7; i++) {
-    const note = KEYS[(idx + i) % 12];
-    rows.push([roman(i), note + TRADS[i], note + SEVS[i]]);
-  }
-  const borrowed = [];
-  [0,1,3,4,6].forEach((deg, j) => {
-    const note = KEYS[(idx + deg) % 12];
-    borrowed.push([BORROW_NAMES[j], note + BORROWED[deg]]);
-  });
-  let html = '<table class="chord-table"><tr><th></th><th>Triad</th><th>Seventh</th></tr>';
-  rows.forEach(r => {
-    html += `<tr><td>${r[0]}</td><td class="chord-name">${r[1]}</td><td class="chord-name">${r[2]}</td></tr>`;
-  });
-  html += '</table>';
-  html += '<div style="font-weight:600;color:#999;font-size:11px;margin-bottom:4px">Borrowed</div>';
-  html += '<table class="chord-table"><tr><th></th><th>Chord</th></tr>';
-  borrowed.forEach(b => {
-    html += `<tr><td>${b[0]}</td><td class="chord-name">${b[1]}</td></tr>`;
-  });
-  html += '</table>';
-  document.getElementById('chordChart').innerHTML = html;
-}
-buildChart('C');
-
-keySelect.addEventListener('change', e => buildChart(e.target.value));
-document.getElementById('keyPrev').addEventListener('click', () => {
-  const i = (KEYS.indexOf(keySelect.value) - 1 + 12) % 12;
-  keySelect.value = KEYS[i]; buildChart(KEYS[i]);
-});
-document.getElementById('keyNext').addEventListener('click', () => {
-  const i = (KEYS.indexOf(keySelect.value) + 1) % 12;
-  keySelect.value = KEYS[i]; buildChart(KEYS[i]);
-});
-
 /* ============================== LIBRARY / START SCREEN ============================== */
 const GREETINGS = [
   'Hello there',
@@ -370,6 +622,17 @@ function newProject() {
   currentProject = null;
   document.getElementById('songTitle').textContent = 'Untitled song';
   lyricsEl.innerHTML = '<div class="line"><br></div>';
+
+  // Reset scale & BPM to defaults for a fresh song
+  document.getElementById('bpm').value = 100;
+  currentRoot = 'C';
+  currentMode = 'major';
+  currentScale = 'natural';
+  document.getElementById('scaleRootSelect').value = 'C';
+  document.getElementById('scaleModeSelect').value = 'major';
+  populateScaleTypes();   // rebuilds scale type dropdown (defaults to natural)
+  syncChordMenu();        // rebuilds chord chart
+
   showEditor();
   const title = document.getElementById('songTitle');
   title.focus();
@@ -386,17 +649,35 @@ function openProject(i) {
   currentProject = i;
   document.getElementById('songTitle').textContent = p.title;
   lyricsEl.innerHTML = p.body || '';
+
+  // Restore per-project scale & BPM (fall back to defaults for old projects)
+  document.getElementById('bpm').value = p.bpm || 100;
+  currentRoot = p.root || 'C';
+  currentMode = p.mode || 'major';
+  currentScale = p.scale || 'natural';
+  document.getElementById('scaleRootSelect').value = currentRoot;
+  document.getElementById('scaleModeSelect').value = currentMode;
+  populateScaleTypes();
+  syncChordMenu();
+
   showEditor();
 }
+
 
 function persistCurrent() {
   const title = document.getElementById('songTitle').textContent.trim() || 'Untitled song';
   const body = lyricsEl.innerHTML;
   const now = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const projectState = {
+    bpm: document.getElementById('bpm').value,
+    root: currentRoot,
+    mode: currentMode,
+    scale: currentScale,
+  };
   if (currentProject !== null && projects[currentProject]) {
-    projects[currentProject] = { title, body, updated: now };
+    projects[currentProject] = { title, body, updated: now, ...projectState };
   } else {
-    projects.unshift({ title, body, updated: now });
+    projects.unshift({ title, body, updated: now, ...projectState });
     currentProject = 0;
   }
   localStorage.setItem('sw_projects', JSON.stringify(projects));
@@ -410,7 +691,6 @@ document.getElementById('songTitle').addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     e.preventDefault();
     document.getElementById('songTitle').blur();
-    persistCurrent();
   }
 });
 document.getElementById('deleteProjectTopBtn').addEventListener('click', () => {
@@ -431,28 +711,75 @@ function openSettings() {
   settingsModal.classList.remove('hidden');
 }
 
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [0,2,4].map(i => parseInt(h.substr(i,2), 16));
+}
+function rgbToHex([r,g,b]) {
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+function mix(hex, other, ratio) {
+  const a = hexToRgb(hex), b = hexToRgb(other);
+  return rgbToHex(a.map((v,i) => Math.round(v + (b[i]-v)*ratio)));
+}
+function buildMonoTheme(base, dark) {
+  return {
+    '--bg':          dark ? mix(base, '#000000', 0.78) : mix(base, '#ffffff', 0.78),
+    '--panel':       dark ? mix(base, '#000000', 0.66) : mix(base, '#ffffff', 0.66),
+    '--side':        dark ? mix(base, '#000000', 0.72) : mix(base, '#ffffff', 0.72),
+    '--border':      dark ? mix(base, '#ffffff', 0.55) : mix(base, '#000000', 0.55),
+    '--text':        dark ? mix(base, '#ffffff', 0.90) : mix(base, '#000000', 0.90),
+    '--muted':       dark ? mix(base, '#ffffff', 0.60) : mix(base, '#000000', 0.60),
+    '--accent':      dark ? mix(base, '#ffffff', 0.30) : mix(base, '#000000', 0.30),
+    '--accent-hover':dark ? mix(base, '#ffffff', 0.40) : mix(base, '#000000', 0.40),
+    '--input':       dark ? mix(base, '#000000', 0.60) : mix(base, '#ffffff', 0.60),
+    '--hover':       dark ? mix(base, '#ffffff', 0.42) : mix(base, '#000000', 0.42),
+  };
+}
+
+
+
+
+
 function applySettings() {
   const theme = settings.theme || 'light';
   const accent = settings.accent || '#3b82f6';
   const fontSize = settings.fontSize || 16;
   const fontFamily = settings.fontFamily || 'system';
-  const textColor = settings.textColor || '#2c2f33';
 
-  document.documentElement.setAttribute('data-theme', theme);
-  document.documentElement.style.setProperty('--accent', accent);
-  document.documentElement.style.setProperty('--accent-hover', accent + 'cc');
+  document.documentElement.setAttribute('data-theme', theme.startsWith('mono') ? 'mono' : theme);
+
+  if (theme.startsWith('mono')) {
+    const base = settings.monoColor || '#3b82f6';
+    const dark = theme === 'mono-dark';
+    const vars = buildMonoTheme(base, dark);
+    Object.entries(vars).forEach(([k, v]) =>
+      document.documentElement.style.setProperty(k, v)
+    );
+  } else {
+    // Clear any leftover mono inline vars so CSS theme rules apply
+    ['--bg','--panel','--side','--border','--text','--muted',
+     '--accent','--accent-hover','--input','--hover'].forEach(k =>
+      document.documentElement.style.removeProperty(k)
+    );
+    document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.style.setProperty('--accent-hover', accent + 'cc');
+  }
 
   lyricsEl.style.fontSize = fontSize + 'px';
-  lyricsEl.style.color = textColor;
   lyricsEl.style.fontFamily = fontFamily === 'system' ? '' : fontFamily;
 
   document.getElementById('themeLight').checked = theme === 'light';
   document.getElementById('themeDark').checked = theme === 'dark';
+  document.getElementById('themeMonoLight').checked = theme === 'mono-light';
+  document.getElementById('themeMonoDark').checked = theme === 'mono-dark';
   document.getElementById('fontSizeRange').value = fontSize;
   document.getElementById('fontSizeVal').textContent = fontSize;
   document.getElementById('fontFamilySelect').value = fontFamily;
-  document.getElementById('textColorInput').value = textColor;
   document.getElementById('projectLocation').value = settings.location || '';
+
+  const monoColor = document.getElementById('monoColorInput');
+  if (monoColor) monoColor.value = settings.monoColor || '#3b82f6';
 
   document.querySelectorAll('.swatch').forEach(s => {
     s.classList.toggle('selected', s.dataset.color === accent);
@@ -460,6 +787,8 @@ function applySettings() {
   document.getElementById('accountName').value = (settings.account && settings.account.name) || '';
   updateAvatar();
 }
+
+
 
 // Open / close
 document.getElementById('settingsBtn').addEventListener('click', () => {
@@ -491,6 +820,22 @@ document.querySelectorAll('.swatch').forEach(s => {
   });
 });
 
+// Mono base color
+document.getElementById('monoColorInput').addEventListener('input', e => {
+  if (settings.theme.startsWith('mono')) {
+    const dark = settings.theme === 'mono-dark';
+    const vars = buildMonoTheme(e.target.value, dark);
+    Object.entries(vars).forEach(([k, v]) =>
+      document.documentElement.style.setProperty(k, v)
+    );
+  }
+});
+document.getElementById('monoColorInput').addEventListener('change', e => {
+  settings.monoColor = e.target.value;
+  localStorage.setItem('sw_settings', JSON.stringify(settings));
+});
+
+
 // Font size
 document.getElementById('fontSizeRange').addEventListener('input', e => {
   document.getElementById('fontSizeVal').textContent = e.target.value;
@@ -506,13 +851,6 @@ document.getElementById('fontFamilySelect').addEventListener('change', e => {
   applySettings();
 });
 
-// Text color
-document.getElementById('textColorInput').addEventListener('input', e => {
-  settings.textColor = e.target.value;
-  localStorage.setItem('sw_settings', JSON.stringify(settings));
-  applySettings();
-});
-
 // Location (stored for now; real folder write comes later)
 document.getElementById('projectLocation').addEventListener('change', e => {
   settings.location = e.target.value;
@@ -522,6 +860,76 @@ document.getElementById('projectLocation').addEventListener('change', e => {
 document.getElementById('browseLocationBtn').addEventListener('click', () => {
   document.getElementById('locationNote').textContent = 'Folder picking needs the Tauri dialog plugin — wiring that up in the save-to-folder stage.';
 });
+
+/* ============================== CHANGELOG ============================== */
+const CHANGELOG = {
+  '1.2.0': [
+    'Per-project scale, key, and BPM — each song remembers its own settings',
+    'New projects default to C major, natural, 100 BPM',
+    'Smart paste — converts chords, tabs, and spacing from any source',
+    'Floating chords — paste chord-only lines like intros',
+    'Mono themes — light and dark variants with custom base color',
+    'Chord alignment — chords stay positioned over the right words'
+  ]
+};
+
+
+function maybeShowChangelog() {
+  const lastSeen = settings.lastSeenVersion || '';
+  if (lastSeen !== APP_VERSION && CHANGELOG[APP_VERSION]) {
+    showChangelog(CHANGELOG[APP_VERSION]);
+  }
+  settings.lastSeenVersion = APP_VERSION;
+  localStorage.setItem('sw_settings', JSON.stringify(settings));
+}
+
+function showChangelog(items) {
+  // Build a small modal listing the changes
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <h2>What's new in v${APP_VERSION}</h2>
+        <button class="modal-close" id="changelogClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <ul style="padding-left:18px;line-height:1.8">
+          ${items.map(i => `<li>${i}</li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#changelogClose').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+/* ============================== PRINT / PDF ============================== */
+document.getElementById('printBtn').addEventListener('click', () => {
+  const title = document.getElementById('songTitle').textContent.trim() || 'Untitled song';
+
+  // Build a clean print document
+  const printDoc = document.createElement('div');
+  printDoc.className = 'print-root';
+  printDoc.innerHTML = `
+    <div class="print-title">${escapeHtml(title)}</div>
+    <div class="print-meta">Key: ${currentRoot} · BPM: ${document.getElementById('bpm').value}</div>
+    <div class="print-body">${lyricsEl.innerHTML}</div>
+  `;
+  document.body.appendChild(printDoc);
+
+  // Print, then clean up
+  window.print();
+
+  // Remove after print dialog closes (or after a tick)
+  setTimeout(() => printDoc.remove(), 500);
+});
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
 
 /* ============================== TAB INSERT ============================== */
 function insertTab(type) {
@@ -584,9 +992,10 @@ document.getElementById('insertBassTabBtn').addEventListener('click', () => inse
 
 /* ============================== LINE STRUCTURE ============================== */
 // Enter: always make a numbered .line
-lyricsEl.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
+lyricsEl.addEventListener('paste', e => {
   e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  const lines = text.split(/\r?\n/);
 
   const sel = window.getSelection();
   let anchor = null;
@@ -597,45 +1006,143 @@ lyricsEl.addEventListener('keydown', e => {
   }
   if (!anchor || anchor.parentNode !== lyricsEl) anchor = lyricsEl.lastElementChild;
 
-  const fresh = document.createElement('div');
-  fresh.className = 'line';
-  fresh.innerHTML = '<br>';
-  lyricsEl.insertBefore(fresh, anchor.nextSibling);
+  let ref = anchor;
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // 1. Tab block detection — a run of tab lines
+    if (/^[eEBGDA](\||\s\|)/.test(line)) {
+      const tabLines = [];
+      while (i < lines.length && /^[eEBGDA](\||\s\|)/.test(lines[i])) {
+        tabLines.push(lines[i]);
+        i++;
+      }
+      const tab = document.createElement('div');
+      tab.className = 'tab-block';
+      tab.dataset.tab = 'guitar';
+      tabLines.forEach(t => {
+        const dl = document.createElement('div');
+        dl.className = 'tab-line';
+        dl.textContent = t;
+        tab.appendChild(dl);
+      });
+      lyricsEl.insertBefore(tab, ref.nextSibling);
+      ref = tab;
+      continue;
+    }
+
+    // 2. Section label
+    if (/^\[.+\]$/.test(line.trim())) {
+      const p = document.createElement('p');
+      p.className = 'section-label';
+      p.textContent = line.trim();
+      lyricsEl.insertBefore(p, ref.nextSibling);
+      ref = p;
+      i++;
+      continue;
+    }
+
+    // 3. Chord line + lyric line pair
+    const chordLine = line;
+    const next = lines[i + 1];
+    if (isChordLine(chordLine)) {
+      const hasLyric = next !== undefined && !isChordLine(next) && next.trim() && !/^\[.+\]$/.test(next.trim());
+      if (hasLyric) {
+        const pairs = alignChordsToLyrics(chordLine, next);
+        if (pairs.length) {
+          const div = document.createElement('div');
+          div.className = 'line';
+          buildChordLine(div, next, pairs);
+          lyricsEl.insertBefore(div, ref.nextSibling);
+          ref = div;
+          i += 2;
+          continue;
+        }
+      }
+      // Floating chord line — no lyric below
+      const div = document.createElement('div');
+      div.className = 'line chord-line';
+      buildFloatingChords(div, chordLine);
+      lyricsEl.insertBefore(div, ref.nextSibling);
+      ref = div;
+      i++;
+      continue;
+    }
+
+    // 4. Plain lyric line
+    const div = document.createElement('div');
+    div.className = 'line';
+    if (line.trim()) {
+      div.textContent = line;
+    } else {
+      div.classList.add('line-spacer');
+      div.innerHTML = '<br>';
+    }
+    lyricsEl.insertBefore(div, ref.nextSibling);
+    ref = div;
+    i++;
+  }
 
   const range = document.createRange();
-  range.setStart(fresh, 0);
+  range.setStart(ref, 0);
   range.collapse(true);
   sel.removeAllRanges();
   sel.addRange(range);
   lyricsEl.focus();
 });
 
-// DOM normalizer
-function normalizeLyrics() {
-  // Lift any block elements nested inside .line out as siblings
-  lyricsEl.querySelectorAll('.line > .line, .line > .tab-block, .line > div').forEach(block => {
-    const parent = block.parentElement;
-    parent.parentNode.insertBefore(block, parent.nextSibling);
-    if (!parent.textContent.trim() && !parent.querySelector('.chord')) parent.remove();
-  });
+function isChordLine(line) {
+  // A line is a chord line if it's mostly chords (uppercase letters + optional suffixes)
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  // strip spaces, then every token must look like a chord
+  const tokens = trimmed.split(/\s+/);
+  return tokens.length > 0 && tokens.every(t => /^[A-G][#b]?(m|maj|min|dim|aug|sus|7|9|11|13|add|sus2|sus4|6|5|maj7|m7|dim7|aug7|m7b5)*$/.test(t));
+}
 
-  // Wrap stray text nodes into .line divs
-  Array.from(lyricsEl.childNodes).forEach(child => {
-    if (child.nodeType === 3 && child.textContent.trim()) {
-      const div = document.createElement('div');
-      div.className = 'line';
-      div.appendChild(child);
-      lyricsEl.insertBefore(div, child.nextSibling);
+function buildChordLine(div, lyricText, pairs) {
+  // Rebuild the lyric, wrapping matched words with their chord
+  const matched = new Map();
+  pairs.forEach(p => matched.set(p.word, p.chord));
+
+  const words = lyricText.split(' ');
+  let first = true;
+  words.forEach(w => {
+    if (!first) div.appendChild(document.createTextNode(' '));
+    first = false;
+    if (matched.has(w)) {
+      const wrap = document.createElement('span');
+      wrap.className = 'chordwrap';
+      const ch = document.createElement('span');
+      ch.className = 'chord';
+      ch.textContent = matched.get(w);
+      wrap.appendChild(ch);
+      wrap.appendChild(document.createTextNode(w));
+      div.appendChild(wrap);
+    } else {
+      div.appendChild(document.createTextNode(w));
     }
   });
+}
 
-  // Always at least one line
-  if (!lyricsEl.querySelector('.line') && !lyricsEl.querySelector('.tab-block')) {
-    lyricsEl.innerHTML = '<div class="line"><br></div>';
+function buildFloatingChords(div, chordLine) {
+  const chordRe = /[A-G][#b]?(m|maj|min|dim|aug|sus|7|9|11|13|add|sus2|sus4|6|5|maj7|m7|dim7|aug7|m7b5)*/g;
+  let m;
+  while ((m = chordRe.exec(chordLine)) !== null) {
+
+    const wrap = document.createElement('span');
+    wrap.className = 'chordwrap';
+    const ch = document.createElement('span');
+    ch.className = 'chord';
+    ch.textContent = m[0];
+    wrap.appendChild(ch);
+    div.appendChild(wrap);
+    div.appendChild(document.createTextNode(' '));
   }
 }
 
-lyricsEl.addEventListener('input', normalizeLyrics);
+
 
 /* ============================== ACCOUNT ============================== */
 function updateAvatar() {
@@ -806,4 +1313,13 @@ window.addEventListener('load', () => {
   try { showStart(); } catch (e) { console.error('start error:', e); }
   try { normalizeLyrics(); } catch (e) { console.error('normalize error:', e); }
   try { buildShortcutsUI(); } catch (e) { console.error('shortcuts error:', e); }
+
+  const v = document.getElementById('versionLabel');
+  if (v) v.textContent = 'Songwriter Studio v' + APP_VERSION;
+
+  try { maybeShowChangelog(); } catch (e) { console.error('changelog error:', e); }
+  try {
+    populateScaleTypes();
+    syncChordMenu();
+  } catch (e) { console.error('scale init error:', e); }
 });
