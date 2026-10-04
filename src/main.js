@@ -1317,6 +1317,12 @@ window.addEventListener('load', () => {
   const v = document.getElementById('versionLabel');
   if (v) v.textContent = 'Songwriter Studio v' + APP_VERSION;
 
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err =>
+      console.error('SW registration failed:', err)
+    );
+  }
+
   try { maybeShowChangelog(); } catch (e) { console.error('changelog error:', e); }
   try {
     populateScaleTypes();
