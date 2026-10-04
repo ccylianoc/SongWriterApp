@@ -34,15 +34,56 @@ const recTimer   = document.getElementById('recTimer');
 document.getElementById('saveBtn').addEventListener('click', () => {
   persistCurrent();
   const title = document.getElementById('songTitle').textContent.trim() || 'Untitled song';
-  const body  = document.getElementById('lyrics').innerHTML;
-  const blob  = new Blob([body], { type: 'text/html' });
-  const url   = URL.createObjectURL(blob);
-  const a     = document.createElement('a');
+  const body = lyricsEl.innerHTML;
+  const project = {
+    title,
+    bpm: document.getElementById('bpm').value,
+    root: currentRoot,
+    mode: currentMode,
+    scale: currentScale,
+    body
+  };
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
   a.href = url;
-  a.download = title + '.html';
+  a.download = title + '.json';
   a.click();
   URL.revokeObjectURL(url);
 });
+
+/* ============================= IMPORT ============================= */
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFileInput').click();
+});
+document.getElementById('importFileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const p = JSON.parse(reader.result);
+      if (!p.title || !p.body) throw new Error('invalid');
+      projects.unshift({
+        title: p.title,
+        body: p.body,
+        bpm: p.bpm || 100,
+        root: p.root || 'C',
+        mode: p.mode || 'major',
+        scale: p.scale || 'natural',
+        updated: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+      });
+      localStorage.setItem('sw_projects', JSON.stringify(projects));
+      renderLibrary();
+    } catch (err) {
+      alert('That file is not a valid Songwritee project.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
 
 // ---------- Chord validation ----------
 const ROOT_NOTES = ['A','B','C','D','E','F','G'];
@@ -863,14 +904,11 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.2.0': [
-    'Per-project scale, key, and BPM — each song remembers its own settings',
-    'New projects default to C major, natural, 100 BPM',
-    'Smart paste — converts chords, tabs, and spacing from any source',
-    'Floating chords — paste chord-only lines like intros',
-    'Mono themes — light and dark variants with custom base color',
-    'Chord alignment — chords stay positioned over the right words'
-  ]
+  '1.3.0': [
+    'Export projects as .json files',
+    'Import .json projects from the top bar'
+]
+
 };
 
 
