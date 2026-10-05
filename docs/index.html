@@ -273,6 +273,7 @@
     </aside>
   </main>
 
+  <!---- Mobile ---->
   <nav id="mobileNav" class="mobile-nav hidden">
     <button data-panel="lyrics" class="mnav-btn active">🎵 Lyrics</button>
     <button data-panel="chords" class="mnav-btn">🎸 Chords</button>
@@ -280,6 +281,12 @@
     <button data-panel="recordings" class="mnav-btn">🎤 Record</button>
     <button data-panel="dictionary" class="mnav-btn">📖 Dict</button>
   </nav>
+  <!-- Slide-up sheet (mobile) -->
+  <div id="sheetOverlay" class="sheet-overlay hidden"></div>
+  <div id="sheet" class="sheet hidden">
+    <div class="sheet-handle"></div>
+    <div id="sheetContent" class="sheet-content"></div>
+  </div>
 
 
   <input type="file" id="importFileInput" accept=".json" style="display:none">

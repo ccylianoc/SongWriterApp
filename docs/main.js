@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 /* ============================== STATE ============================== */
 
 
@@ -36,6 +36,48 @@ document.querySelectorAll('.mnav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mnav-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+  });
+});
+
+/*============================MOBILE SHEET==================================*/ 
+const sheet = document.getElementById('sheet');
+const sheetOverlay = document.getElementById('sheetOverlay');
+const sheetContent = document.getElementById('sheetContent');
+
+function openSheet(html) {
+  sheetContent.innerHTML = html;
+  sheet.classList.add('visible');
+  sheetOverlay.classList.remove('hidden');
+  requestAnimationFrame(() => sheetOverlay.classList.add('visible'));
+}
+function closeSheet() {
+  sheet.classList.remove('visible');
+  sheetOverlay.classList.remove('visible');
+  setTimeout(() => sheetOverlay.classList.add('hidden'), 200);
+}
+
+sheetOverlay.addEventListener('click', closeSheet);
+
+// Map each bottom tab to the side-panel content it should show
+const PANEL_CONTENT = {
+  chords: () => document.getElementById('side-chords').innerHTML,
+  tabs: () => document.getElementById('side-tabs').innerHTML,
+  recordings: () => document.getElementById('side-recordings').innerHTML,
+  dictionary: () => document.getElementById('side-dictionary').innerHTML
+};
+
+document.querySelectorAll('.mnav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mnav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const panel = btn.dataset.panel;
+    if (panel === 'lyrics') {
+      closeSheet();
+      return;
+    }
+    const getContent = PANEL_CONTENT[panel];
+    if (getContent) openSheet(getContent());
   });
 });
 
@@ -923,9 +965,8 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.4.0': [
-    'Added mobile navigation for smaller screens',
-    'Improved responsive design for all device sizes',
+  '1.4.1': [
+    'Mobile panel sheet fixed to not cover the editor when open.',
 ]
 
 };
@@ -1361,6 +1402,8 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); document.getElementById('italicBtn').click();
   }
 });
+
+
 
 /* ============================== INIT ============================== */
 showStart();
