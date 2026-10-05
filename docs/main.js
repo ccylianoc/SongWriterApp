@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.4.2';
 /* ============================== STATE ============================== */
 
 
@@ -61,10 +61,9 @@ sheetOverlay.addEventListener('click', closeSheet);
 // Map each bottom tab to the side-panel content it should show
 const PANEL_CONTENT = {
   chords: () => document.getElementById('side-chords').innerHTML,
-  tabs: () => document.getElementById('side-tabs').innerHTML,
-  recordings: () => document.getElementById('side-recordings').innerHTML,
-  dictionary: () => document.getElementById('side-dictionary').innerHTML
+  recordings: () => document.getElementById('side-recordings').innerHTML
 };
+
 
 document.querySelectorAll('.mnav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -965,8 +964,8 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.4.1': [
-    'Mobile panel sheet fixed to not cover the editor when open.',
+  '1.4.2': [
+    'Mobile panel overlay fixes',
 ]
 
 };
