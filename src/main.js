@@ -49,7 +49,7 @@ const sheetContent = document.getElementById('sheetContent');
 
 function openSheet(html) {
   sheetContent.innerHTML = html;
-  sheet.classList.remove('hidden');   // ← this line is missing
+  sheet.classList.remove('hidden');
   sheet.classList.add('visible');
   sheetOverlay.classList.remove('hidden');
   requestAnimationFrame(() => sheetOverlay.classList.add('visible'));
@@ -462,18 +462,6 @@ document.getElementById('chordPicker').addEventListener('click', e => {
 
 
 document.getElementById('addChordBtn').addEventListener('click', openChordPicker);
-
-document.getElementById('cpInsert').addEventListener('click', () => {
-  const chord = cpRoot + cpSuffix;
-  const valid = validateChord(chord);
-  if (!valid) {
-    alert('That doesn\'t look like a valid chord. Try e.g. Am, F, G7, Cmaj7.');
-    return;
-  }
-  insertChord(valid);
-  closeChordPicker();
-});
-
 
 // Remember caret position when the editor loses focus
 lyricsEl.addEventListener('blur', () => {
