@@ -937,3 +937,9 @@ body { background: var(--bg); color: var(--text); }
 @media (max-width: 768px) and (orientation: portrait) {
   .hide-on-mobile { display: none; }
 }
+
+body.on-start .mobile-nav,
+body.on-start .format-bar {
+  display: none;
+}
+

@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.3.2';
+const APP_VERSION = '1.4.3.3';
 /* ============================== STATE ============================== */
 
 
@@ -55,7 +55,40 @@ function openSheet(html) {
   sheet.classList.add('visible');
   sheetOverlay.classList.remove('hidden');
   requestAnimationFrame(() => sheetOverlay.classList.add('visible'));
+
+  
+
+  // Re-wire record controls in the sheet
+  const recBtn = sheetContent.querySelector('#recBtn');
+  if (recBtn) recBtn.addEventListener('click', handleRecClick);
+
+  const uploadBtn = sheetContent.querySelector('#uploadAudioBtn');
+  if (uploadBtn) uploadBtn.addEventListener('click', () => document.getElementById('audioFileInput').click());
+
+  const timerEl = sheetContent.querySelector('#recTimer');
+  if (timerEl) timerEl.textContent = '0:00';
+
+
+  // Rebuild the recordings list from the real source so deletes stick
+  // in openSheet, after copying the real list into the sheet
+  const sheetList = sheetContent.querySelector('#recList');
+    if (sheetList) {
+      sheetList.id = 'sheetRecList';
+      sheetList.innerHTML = document.getElementById('recList').innerHTML;
+    }
+    sheetList.querySelectorAll('.rec-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.rec-item').remove();        // Also remove from the real list so it stays deleted
+      const realItem = realList.querySelector('.rec-item');
+      if (realItem) realItem.remove();
+      if (!realList.children.length) realList.innerHTML = '<div class="empty-rec">No recordings yet</div>';
+      if (!sheetList.children.length) sheetList.innerHTML = '<div class="empty-rec">No recordings yet</div>';
+    });
+  });
 }
+
+
+
 
 function closeSheet() {
   sheet.classList.remove('visible');
@@ -686,7 +719,11 @@ function transposeChord(chord, step) {
 }
 
 /* ============================== RECORDINGS ============================== */
-recBtn.addEventListener('click', async () => {
+async function handleRecClick(e) {
+  const btn = e.currentTarget;
+  const container = btn.closest('.rec-controls') || btn.closest('.side-content');
+  const timerEl = container ? container.querySelector('#recTimer') : document.getElementById('recTimer');
+
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
     return;
@@ -695,44 +732,62 @@ recBtn.addEventListener('click', async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
     chunks = [];
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.ondataavailable = e2 => chunks.push(e2.data);
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunks, { type: 'audio/webm' });
       const url = URL.createObjectURL(blob);
       addRecording(url);
       stream.getTracks().forEach(t => t.stop());
       clearInterval(timerInterval);
-      recBtn.classList.remove('recording');
-      recBtn.textContent = 'REC';
+      btn.classList.remove('recording');
+      btn.textContent = 'REC';
     };
     mediaRecorder.start();
-    recBtn.classList.add('recording');
-    recBtn.textContent = 'STOP';
+    btn.classList.add('recording');
+    btn.textContent = 'STOP';
     seconds = 0;
-    recTimer.textContent = '0:00';
+    if (timerEl) timerEl.textContent = '0:00';
     timerInterval = setInterval(() => {
       seconds++;
       const m = Math.floor(seconds / 60);
       const s = seconds % 60;
-      recTimer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      if (timerEl) timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
     }, 1000);
-  } catch (e) {
+  } catch (err) {
     alert('Microphone access denied. Check Windows mic permissions.');
   }
-});
+}
+
+
+// Wire the side-panel REC button too
+document.getElementById('recBtn').addEventListener('click', handleRecClick);
 
 function addRecording(url) {
-  const list = document.getElementById('recList');
-  if (list.textContent.includes('No recordings yet')) list.innerHTML = '';
+  const realList = document.getElementById('recList');
+  if (realList.textContent.includes('No recordings yet')) realList.innerHTML = '';
   const div = document.createElement('div');
   div.className = 'rec-item';
   div.innerHTML = `<audio controls src="${url}"></audio><button class="rec-del" title="Delete recording">🗑</button>`;
   div.querySelector('.rec-del').addEventListener('click', () => {
     div.remove();
-    if (!list.children.length) list.innerHTML = '<div class="empty-rec">No recordings yet</div>';
+    if (!realList.children.length) realList.innerHTML = '<div class="empty-rec">No recordings yet</div>';
   });
-  list.appendChild(div);
+  realList.appendChild(div);
+
+  // Mirror into the open sheet, if any
+  const sheetList = document.getElementById('sheetRecList');
+  if (sheetList) {
+    const clone = div.cloneNode(true);
+    clone.querySelector('.rec-del').addEventListener('click', () => {
+      clone.remove();
+      if (!sheetList.children.length) sheetList.innerHTML = '<div class="empty-rec">No recordings yet</div>';
+    });
+    sheetList.appendChild(clone);
+  }
 }
+
+
+
 
 function clearRecordings() {
   document.getElementById('recList').innerHTML = '<div class="empty-rec">No recordings yet</div>';
@@ -790,6 +845,7 @@ function showStart() {
   const acc = settings.account || {};
   const name = acc.name ? ', ' + acc.name : '';
   startScreen.classList.add('visible');
+  document.body.classList.add('on-start');
   workspace.classList.add('hidden');
   toolbar.classList.add('hidden');
   document.getElementById('backLink').classList.add('hidden');
@@ -803,6 +859,7 @@ function showStart() {
 function showEditor() {
   startScreen.classList.remove('visible');
   workspace.classList.remove('hidden');
+  document.body.classList.remove('on-start');
   toolbar.classList.remove('hidden');
   document.getElementById('backLink').classList.remove('hidden');
   document.getElementById('deleteProjectTopBtn').classList.remove('hidden');
@@ -1093,16 +1150,35 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
+  '1.4.3': [
+    'New: Mobile detection with a bottom navigation bar for Lyrics, Chords, and Record.',
+    'New: Full-screen editor on mobile with a scrollable toolbar.',
+    'New: Slide-up sheets for Chords and Record, replacing the side panel on mobile.',
+    'Improved: Larger touch targets for easier mobile interaction.',
+  ],
+  '1.4.3.1': [
+    'New: Swipe gestures to switch between mobile sheets.',
+    'New: Visual chord picker replacing the text prompt.',
+    'Fixed: Ctrl+K shortcut now opens the chord picker.',
+  ],
   '1.4.3.2': [
-    'New: Section picker — choose from Intro, Verse, Bridge, Post Chorus, Pre-Chorus, Chorus, Instrumental, Outro, or Solo.',
-    'New: Tab picker — choose between Guitar and Bass tabs.',
-    'New: Mobile formatting bar above the bottom nav with quick access to Tab, Bold, Italic, Chord, and Section.',
-    'New: Mobile top bar simplified — only BPM, Key, Mode, Scale, Transpose, and Save remain visible.',
-    'Fixed: Restored the missing lyricsEl declaration that was breaking all button interactions.',
+    'New: Section picker with Intro, Verse, Bridge, Post Chorus, Pre-Chorus, Chorus, Instrumental, Outro, and Solo.',
+    'New: Guitar/Bass tab picker.',
+    'New: Mobile formatting bar above the bottom nav for Tab, Bold, Italic, Chord, and Section.',
+    'New: Simplified mobile top bar — only BPM, Key, Mode, Scale, Transpose, and Save remain visible.',
+    'Fixed: Restored the missing lyricsEl declaration that broke button interactions.',
     'Fixed: Removed duplicate formatting bar markup and conflicting CSS rules.',
-    'Improved: Mobile layout now adapts to window size, so resizing on desktop gives you the compact mobile layout too.',
+    'Improved: Layout adapts to window size, so resizing on desktop applies the compact mobile layout.',
+  ],
+  '1.4.3.3': [
+    'New: Fully functional record panel on mobile — REC, timer, and upload work in the sheet.',
+    'Fixed: Recordings now appear instantly in the sheet without reopening the panel.',
+    'Fixed: Recording timer resets to 0:00 when the record panel opens.',
+    'Fixed: Deleted recordings stay deleted.',
+    'Fixed: Bottom bars hidden on the start menu for a cleaner library view.',
   ],
 };
+
 
 function maybeShowChangelog() {
   const lastSeen = settings.lastSeenVersion || '';
