@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.2';
+const APP_VERSION = '1.4.2.1';
 /* ============================== STATE ============================== */
 
 
@@ -46,10 +46,12 @@ const sheetContent = document.getElementById('sheetContent');
 
 function openSheet(html) {
   sheetContent.innerHTML = html;
+  sheet.classList.remove('hidden');   // ← this line is missing
   sheet.classList.add('visible');
   sheetOverlay.classList.remove('hidden');
   requestAnimationFrame(() => sheetOverlay.classList.add('visible'));
 }
+
 function closeSheet() {
   sheet.classList.remove('visible');
   sheetOverlay.classList.remove('visible');
@@ -964,7 +966,7 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.4.2': [
+  '1.4.2.1': [
     'Mobile panel overlay fixes',
 ]
 
