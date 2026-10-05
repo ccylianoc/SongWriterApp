@@ -887,3 +887,16 @@ body { background: var(--bg); color: var(--text); }
   .cp-grid { grid-template-columns: repeat(4, 1fr); }
   .cp-suffixes { grid-template-columns: repeat(3, 1fr); }
 }
+/* Portrait mobile — hide side panel, show bottom nav */
+@media (max-width: 768px) and (orientation: portrait) {
+  .side-pane { display: none; }
+  .mobile-nav { display: flex; }
+  .workspace { padding-bottom: 60px; }
+}
+
+/* Landscape mobile — keep the side panel, hide bottom nav */
+@media (max-width: 900px) and (orientation: landscape) {
+  .mobile-nav { display: none; }
+  .side-pane { display: flex; }
+  .workspace { padding-bottom: 0; }
+}

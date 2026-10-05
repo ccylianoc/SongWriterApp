@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.3';
+const APP_VERSION = '1.4.3.1';
 /* ============================== STATE ============================== */
 
 
@@ -23,11 +23,14 @@ const settings = JSON.parse(localStorage.getItem('sw_settings') || '{}');
 
 /* ============================== MOBILE DETECTION ============================== */
 function detectMobile() {
-  const mobile = window.matchMedia('(max-width: 768px)').matches;
+  const portrait = window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches;
+  const landscape = window.matchMedia('(max-width: 900px) and (orientation: landscape)').matches;
+  const mobile = portrait || landscape;
   document.body.classList.toggle('mobile', mobile);
-  document.getElementById('mobileNav').classList.toggle('hidden', !mobile);
+  document.getElementById('mobileNav').classList.toggle('hidden', !portrait);
   return mobile;
 }
+
 window.addEventListener('resize', detectMobile);
 detectMobile();
 
@@ -81,6 +84,33 @@ document.querySelectorAll('.mnav-btn').forEach(btn => {
     if (getContent) openSheet(getContent());
   });
 });
+/*=================== MOBILE SHEET MOVEMENT ===========================*/ 
+
+let touchStartX = 0;
+const editorPane = document.querySelector('.editor-pane');
+
+editorPane.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+editorPane.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) < 50) return; // too small to count
+  const btns = Array.from(document.querySelectorAll('.mnav-btn'));
+  const active = btns.findIndex(b => b.classList.contains('active'));
+  if (dx < 0 && active < btns.length - 1) btns[active + 1].click();      // swipe left → next
+  else if (dx > 0 && active > 0) btns[active - 1].click();               // swipe right → prev
+}, { passive: true });
+
+let sheetTouchStart = 0;
+sheet.addEventListener('touchstart', e => {
+  sheetTouchStart = e.touches[0].clientY;
+}, { passive: true });
+
+sheet.addEventListener('touchend', e => {
+  const dy = e.changedTouches[0].clientY - sheetTouchStart;
+  if (dy > 80) closeSheet(); // swiped down far enough
+}, { passive: true });
 
 
 /* ============================== DOM REFS ============================== */
@@ -1024,8 +1054,8 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.4.3': [
-    'New: Chord picker for easy chord insertion!!',
+  '1.4.3.1': [
+    'New: Mobile sheet movement gestures: drag to swipe between sheets.',
 ]
 
 };
