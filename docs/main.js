@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.2.1';
+const APP_VERSION = '1.4.3';
 /* ============================== STATE ============================== */
 
 
@@ -1024,8 +1024,8 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.4.2.1': [
-    'Mobile panel overlay fixes',
+  '1.4.3': [
+    'New: Chord picker for easy chord insertion!!',
 ]
 
 };
@@ -1447,14 +1447,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); insertTab('bass');
   } else if (combo.key === s.addChord.key && combo.shift === s.addChord.shift) {
     e.preventDefault();
-    document.getElementById('addChordBtn').click();
-    // Hide the popup immediately, keep the input focused so typing still works
-    const modal = document.querySelector('#chordModal, .chord-modal, [id*="chord"][class*="modal"]');
-    if (modal) {
-      modal.style.display = 'none';
-      const input = modal.querySelector('input');
-      if (input) input.focus();
-    }
+    openChordPicker();
   } else if (combo.key === s.bold.key && combo.shift === s.bold.shift) {
     e.preventDefault(); document.getElementById('boldBtn').click();
   } else if (combo.key === s.italic.key && combo.shift === s.italic.shift) {

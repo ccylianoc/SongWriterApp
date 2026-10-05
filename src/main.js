@@ -1447,14 +1447,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); insertTab('bass');
   } else if (combo.key === s.addChord.key && combo.shift === s.addChord.shift) {
     e.preventDefault();
-    document.getElementById('addChordBtn').click();
-    // Hide the popup immediately, keep the input focused so typing still works
-    const modal = document.querySelector('#chordModal, .chord-modal, [id*="chord"][class*="modal"]');
-    if (modal) {
-      modal.style.display = 'none';
-      const input = modal.querySelector('input');
-      if (input) input.focus();
-    }
+    openChordPicker();
   } else if (combo.key === s.bold.key && combo.shift === s.bold.shift) {
     e.preventDefault(); document.getElementById('boldBtn').click();
   } else if (combo.key === s.italic.key && combo.shift === s.italic.shift) {
