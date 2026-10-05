@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.4.3.1';
+const APP_VERSION = '1.4.3.2';
 /* ============================== STATE ============================== */
 
 
@@ -20,6 +20,8 @@ try { projects = JSON.parse(localStorage.getItem('sw_projects') || '[]'); } catc
 let currentProject = null;
 
 const settings = JSON.parse(localStorage.getItem('sw_settings') || '{}');
+const lyricsEl = document.getElementById('lyrics');
+
 
 /* ============================== MOBILE DETECTION ============================== */
 function detectMobile() {
@@ -1091,12 +1093,16 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.4.3.1': [
-    'New: Mobile sheet movement gestures: drag to swipe between sheets.',
-]
-
+  '1.4.3.2': [
+    'New: Section picker — choose from Intro, Verse, Bridge, Post Chorus, Pre-Chorus, Chorus, Instrumental, Outro, or Solo.',
+    'New: Tab picker — choose between Guitar and Bass tabs.',
+    'New: Mobile formatting bar above the bottom nav with quick access to Tab, Bold, Italic, Chord, and Section.',
+    'New: Mobile top bar simplified — only BPM, Key, Mode, Scale, Transpose, and Save remain visible.',
+    'Fixed: Restored the missing lyricsEl declaration that was breaking all button interactions.',
+    'Fixed: Removed duplicate formatting bar markup and conflicting CSS rules.',
+    'Improved: Mobile layout now adapts to window size, so resizing on desktop gives you the compact mobile layout too.',
+  ],
 };
-
 
 function maybeShowChangelog() {
   const lastSeen = settings.lastSeenVersion || '';
