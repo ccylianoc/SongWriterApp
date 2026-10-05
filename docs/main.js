@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.1';
 /* ============================== STATE ============================== */
 
 
@@ -904,9 +904,8 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.3.0': [
-    'Export projects as .json files',
-    'Import .json projects from the top bar'
+  '1.3.1': [
+    'Added scrollbar to side panels',
 ]
 
 };

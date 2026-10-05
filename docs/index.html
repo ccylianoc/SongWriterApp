@@ -11,6 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Songwritee">
+
+  
 </head>
 <body>
   <!-- Top blue bar --> 
@@ -193,10 +195,11 @@
         <button class="side-tab active" data-side="chords" title="Chords">🎵</button>
         <button class="side-tab" data-side="recordings" title="Recordings">🎙️</button>
         <button class="side-tab" data-side="guide" title="Guide">💡</button>
+
       </div>
 
       <!-- Chords -->
-      <div class="side-content active" id="side-chords">
+      <div class="side-content active" id="side-chords" style="overflow-y: auto;">
         <div class="side-title">Chords</div>
         <div class="chord-key-row">
           <button class="key-nav" id="keyPrev">↑</button>
@@ -221,7 +224,7 @@
 
 
       <!-- Recordings -->
-      <div class="side-content" id="side-recordings">
+      <div class="side-content" id="side-recordings" style="overflow-y: auto;">
         <div class="side-title">Recordings</div>
         <div class="rec-controls">
           <button class="tool-btn" id="uploadAudioBtn">Upload</button>
@@ -233,7 +236,7 @@
       </div>
 
       <!-- Guide -->
-      <div class="side-content" id="side-guide">
+      <div class="side-content" id="side-guide" style="overflow-y: auto;">
         <div class="side-title">Guide</div>
         <div class="guide">
           <div class="guide-section">
