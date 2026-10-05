@@ -112,33 +112,6 @@ sheet.addEventListener('touchend', e => {
   if (dy > 80) closeSheet(); // swiped down far enough
 }, { passive: true });
 
-/* = FORMAT BAR = */
-const formatBar = document.getElementById('formatBar');
-const lyricsEl = document.getElementById('lyrics');
-
-function updateFormatBar() {
-  const isMobile = window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches;
-  const focused = document.activeElement === lyricsEl;
-  
-  if (!isMobile) {
-    formatBar.classList.add('show'); // always visible on desktop
-    return;
-  }
-  formatBar.classList.toggle('show', focused);
-}
-
-lyricsEl.addEventListener('focus', updateFormatBar);
-lyricsEl.addEventListener('blur', updateFormatBar);
-window.addEventListener('resize', updateFormatBar);
-
-// Track keyboard via visualViewport (mobile)
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => {
-    // When the keyboard opens, the visual viewport shrinks — position the bar above it
-    const vh = window.visualViewport.height;
-    formatBar.style.bottom = (window.innerHeight - vh + 56) + 'px';
-  });
-}
 
 document.getElementById('fbTab').addEventListener('click', openTabPicker);
 document.getElementById('fbBold').addEventListener('click', () => document.getElementById('boldBtn').click());

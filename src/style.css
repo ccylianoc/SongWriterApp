@@ -913,24 +913,9 @@ body { background: var(--bg); color: var(--text); }
   transition: transform .2s ease;
 }
 
-/* Desktop: sits above the bottom nav */
-@media (min-width: 769px) {
-  .format-bar { bottom: 0; }
-}
-
-/* Mobile: hidden by default, appears above keyboard */
-@media (max-width: 768px) and (orientation: portrait) {
-  .format-bar {
-    bottom: 56px; /* above the bottom nav */
-    transform: translateY(120%);
-  }
-  .format-bar.show { transform: translateY(0); }
-}
-
 @media (max-width: 768px) {
   .hide-on-mobile { display: none; }
 }
-
 
 .format-bar {
   display: none;
