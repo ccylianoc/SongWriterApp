@@ -855,3 +855,35 @@ body { background: var(--bg); color: var(--text); }
   overflow-y: auto;
   flex: 1;
 }
+/* ===== Chord picker ===== */
+.cp-section { margin-bottom: 16px; }
+.cp-label {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+}
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.cp-suffixes { grid-template-columns: repeat(4, 1fr); }
+.cp-grid button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.cp-grid button.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.cp-insert { width: 100%; min-height: 48px; font-size: 15px; }
+
+@media (max-width: 768px) {
+  .cp-grid { grid-template-columns: repeat(4, 1fr); }
+  .cp-suffixes { grid-template-columns: repeat(3, 1fr); }
+}

@@ -285,6 +285,26 @@
     <div class="sheet-handle"></div>
     <div id="sheetContent" class="sheet-content"></div>
   </div>
+  <!-- Chord picker modal -->
+  <div id="chordPicker" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Chord</h2>
+        <button class="modal-close" onclick="closeChordPicker()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="cp-section">
+          <div class="cp-label">Root</div>
+          <div id="cpRoots" class="cp-grid"></div>
+        </div>
+        <div class="cp-section">
+          <div class="cp-label">Suffix</div>
+          <div id="cpSuffixes" class="cp-grid cp-suffixes"></div>
+        </div>
+        <button id="cpInsert" class="tool-btn primary cp-insert">Insert Chord</button>
+      </div>
+    </div>
+  </div>
 
 
   <input type="file" id="importFileInput" accept=".json" style="display:none">

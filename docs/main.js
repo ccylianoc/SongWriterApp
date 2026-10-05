@@ -376,16 +376,74 @@ document.getElementById('keyNext').addEventListener('click', () => {
 });
 
 /* ============================== CHORD INSERTION ============================== */
-document.getElementById('addChordBtn').addEventListener('click', () => {
-  const chord = prompt('Enter chord (e.g. Am, F, G7):');
-  if (!chord) return;
+// ---------- Chord picker ----------
+const PICKER_ROOTS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const PICKER_SUFFIXES = ['', 'm', '7', 'maj7', 'm7', 'sus2', 'sus4', 'dim', 'aug', '6', '9', 'add9'];
+
+let cpRoot = 'C';
+let cpSuffix = '';
+
+function openChordPicker() {
+  cpRoot = 'C';
+  cpSuffix = '';
+  renderChordPicker();
+  document.getElementById('chordPicker').classList.remove('hidden');
+}
+function closeChordPicker() {
+  document.getElementById('chordPicker').classList.add('hidden');
+}
+
+function renderChordPicker() {
+  const rootsEl = document.getElementById('cpRoots');
+  rootsEl.innerHTML = '';
+  PICKER_ROOTS.forEach(n => {
+    const b = document.createElement('button');
+    b.textContent = n;
+    b.classList.toggle('selected', n === cpRoot);
+    b.addEventListener('click', () => { cpRoot = n; renderChordPicker(); });
+    rootsEl.appendChild(b);
+  });
+
+  const sufEl = document.getElementById('cpSuffixes');
+  sufEl.innerHTML = '';
+  PICKER_SUFFIXES.forEach(s => {
+    const b = document.createElement('button');
+    b.textContent = s || 'Major';
+    b.classList.toggle('selected', s === cpSuffix);
+    b.addEventListener('click', () => { cpSuffix = s; renderChordPicker(); });
+    sufEl.appendChild(b);
+  });
+}
+
+document.getElementById('cpInsert').addEventListener('click', () => {
+  const chord = cpRoot + cpSuffix;
   const valid = validateChord(chord);
   if (!valid) {
     alert('That doesn\'t look like a valid chord. Try e.g. Am, F, G7, Cmaj7.');
     return;
   }
   insertChord(valid);
+  closeChordPicker();
 });
+
+document.getElementById('chordPicker').addEventListener('click', e => {
+  if (e.target === document.getElementById('chordPicker')) closeChordPicker();
+});
+
+
+document.getElementById('addChordBtn').addEventListener('click', openChordPicker);
+
+document.getElementById('cpInsert').addEventListener('click', () => {
+  const chord = cpRoot + cpSuffix;
+  const valid = validateChord(chord);
+  if (!valid) {
+    alert('That doesn\'t look like a valid chord. Try e.g. Am, F, G7, Cmaj7.');
+    return;
+  }
+  insertChord(valid);
+  closeChordPicker();
+});
+
 
 // Remember caret position when the editor loses focus
 lyricsEl.addEventListener('blur', () => {
