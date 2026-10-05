@@ -779,3 +779,42 @@ body { background: var(--bg); color: var(--text); }
 .new-project-btn:hover { background: var(--accent-hover); }
 .lyrics { color: var(--text); }
 .chord { color: var(--accent); }
+
+/*==============================MOBILE NAV==============================*/
+/* ===== Mobile nav ===== */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  z-index: 50;
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+.mnav-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 8px 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.mnav-btn.active { color: var(--accent); }
+
+/* ===== Mobile (≤768px) ===== */
+@media (max-width: 768px) {
+  .mobile-nav { display: flex; }
+  .side-pane { display: none; }          /* hide side panel */
+  .editor-pane { padding: 16px; }        /* more room */
+  .workspace { padding-bottom: 60px; }   /* room for nav bar */
+  /* Bigger touch targets */
+  .tool-btn, .icon-btn { min-height: 44px; min-width: 44px; }
+  /* Toolbar scrolls horizontally */
+  .toolbar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .toolbar-divider, .toolbar-spacer { display: none; }
+}

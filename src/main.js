@@ -3,7 +3,7 @@
    Organized by feature area. Each block is self-contained.
    ===================================================================== */
 //============================== Version =================================
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.4.0';
 /* ============================== STATE ============================== */
 
 
@@ -20,6 +20,25 @@ try { projects = JSON.parse(localStorage.getItem('sw_projects') || '[]'); } catc
 let currentProject = null;
 
 const settings = JSON.parse(localStorage.getItem('sw_settings') || '{}');
+
+/* ============================== MOBILE DETECTION ============================== */
+function detectMobile() {
+  const mobile = window.matchMedia('(max-width: 768px)').matches;
+  document.body.classList.toggle('mobile', mobile);
+  document.getElementById('mobileNav').classList.toggle('hidden', !mobile);
+  return mobile;
+}
+window.addEventListener('resize', detectMobile);
+detectMobile();
+
+// Bottom nav tab switching (skeleton — just toggles active state for now)
+document.querySelectorAll('.mnav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mnav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
 
 /* ============================== DOM REFS ============================== */
 const lyricsEl   = document.getElementById('lyrics');
@@ -904,8 +923,9 @@ document.getElementById('browseLocationBtn').addEventListener('click', () => {
 
 /* ============================== CHANGELOG ============================== */
 const CHANGELOG = {
-  '1.3.1': [
-    'Added scrollbar to side panels',
+  '1.4.0': [
+    'Added mobile navigation for smaller screens',
+    'Improved responsive design for all device sizes',
 ]
 
 };
