@@ -112,9 +112,42 @@ sheet.addEventListener('touchend', e => {
   if (dy > 80) closeSheet(); // swiped down far enough
 }, { passive: true });
 
+/* = FORMAT BAR = */
+const formatBar = document.getElementById('formatBar');
+const lyricsEl = document.getElementById('lyrics');
+
+function updateFormatBar() {
+  const isMobile = window.matchMedia('(max-width: 768px) and (orientation: portrait)').matches;
+  const focused = document.activeElement === lyricsEl;
+  
+  if (!isMobile) {
+    formatBar.classList.add('show'); // always visible on desktop
+    return;
+  }
+  formatBar.classList.toggle('show', focused);
+}
+
+lyricsEl.addEventListener('focus', updateFormatBar);
+lyricsEl.addEventListener('blur', updateFormatBar);
+window.addEventListener('resize', updateFormatBar);
+
+// Track keyboard via visualViewport (mobile)
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    // When the keyboard opens, the visual viewport shrinks — position the bar above it
+    const vh = window.visualViewport.height;
+    formatBar.style.bottom = (window.innerHeight - vh + 56) + 'px';
+  });
+}
+
+document.getElementById('fbTab').addEventListener('click', openTabPicker);
+document.getElementById('fbBold').addEventListener('click', () => document.getElementById('boldBtn').click());
+document.getElementById('fbItalic').addEventListener('click', () => document.getElementById('italicBtn').click());
+document.getElementById('fbChord').addEventListener('click', openChordPicker);
+document.getElementById('fbSection').addEventListener('click', openSectionPicker);
+
 
 /* ============================== DOM REFS ============================== */
-const lyricsEl   = document.getElementById('lyrics');
 const startScreen = document.getElementById('startScreen');
 const workspace  = document.querySelector('.workspace');
 const toolbar    = document.getElementById('toolbar');
@@ -530,6 +563,52 @@ function insertChord(chord) {
   lyricsEl.focus();
   savedRange = null;
 }
+
+/*============================== SECTION INSERTION ============================== */
+const SECTION_NAMES = ['INTRO','VERSE','BRIDGE','POST CHORUS','PRE-CHORUS','CHORUS','INSTRUMENTAL','OUTRO','SOLO'];
+
+function openSectionPicker() {
+  const el = document.getElementById('cpSections');
+  el.innerHTML = '';
+  SECTION_NAMES.forEach(name => {
+    const b = document.createElement('button');
+    b.textContent = '[' + name + ']';
+    b.addEventListener('click', () => {
+      insertSection(name);
+      closeSectionPicker();
+    });
+    el.appendChild(b);
+  });
+  document.getElementById('sectionPicker').classList.remove('hidden');
+}
+function closeSectionPicker() {
+  document.getElementById('sectionPicker').classList.add('hidden');
+}
+function insertSection(name) {
+  const lyrics = document.getElementById('lyrics');
+  lyrics.innerHTML += `<p class="section-label">[${name}]</p>`;
+}
+
+/* ======================= TAB INSERTION ======================= */
+function openTabPicker() {
+  const el = document.getElementById('cpTabs');
+  el.innerHTML = '';
+  [['Guitar', 'guitar'], ['Bass', 'bass']].forEach(([label, type]) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.addEventListener('click', () => {
+      insertTab(type);
+      closeTabPicker();
+    });
+    el.appendChild(b);
+  });
+  document.getElementById('tabPicker').classList.remove('hidden');
+}
+function closeTabPicker() {
+  document.getElementById('tabPicker').classList.add('hidden');
+}
+
+
 /* ============================ PASTE CONVERTION ============================ */
 function alignChordsToLyrics(chordLine, lyricLine) {
   // chordLine: "  A        F#m     D  E  A"
@@ -591,11 +670,8 @@ function setViewMode(on) {
 viewModeBtn.addEventListener('click', () => setViewMode(!viewMode));
 
 /* ============================== SECTION LABEL ============================== */
-document.getElementById('addSectionBtn').addEventListener('click', () => {
-  const name = prompt('Section name (e.g. Verse, Chorus):');
-  if (!name) return;
-  lyricsEl.innerHTML += `<p class="section-label">[${name}]</p>`;
-});
+document.getElementById('addSectionBtn').addEventListener('click', openSectionPicker);
+
 
 /* ============================== BOLD / ITALIC ============================== */
 document.getElementById('boldBtn').addEventListener('click', () => {

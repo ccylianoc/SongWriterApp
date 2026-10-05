@@ -261,7 +261,7 @@
           </div>
           <div class="guide-section">
             <h4>💾 Projects</h4>
-            <p>Everything auto-saves to your library. Rename by clicking the title up top, delete with the trash icon. <b>Save</b> also downloads an HTML copy.</p>
+            <p>Everything auto-saves to your library. Rename by clicking the title up top, delete with the trash icon. <b>Save</b> also downloads an .json copy.</p>
           </div>
           <div class="guide-section">
             <h4>⚙️ Settings</h4>
@@ -273,7 +273,23 @@
     </aside>
   </main>
 
+  <div id="formatBar" class="format-bar">
+    <button id="fbTab" class="tool-btn">🎼 Tab</button>
+    <button id="fbBold" class="tool-btn"><b>B</b></button>
+    <button id="fbItalic" class="tool-btn"><i>I</i></button>
+    <button id="fbChord" class="tool-btn">Chord</button>
+    <button id="fbSection" class="tool-btn">Section</button>
+  </div>
+
+
   <!---- Mobile ---->
+  <div id="formatBar" class="format-bar">
+    <button id="fbTab" class="tool-btn">🎼 Tab</button>
+    <button id="fbBold" class="tool-btn"><b>B</b></button>
+    <button id="fbItalic" class="tool-btn"><i>I</i></button>
+    <button id="fbChord" class="tool-btn">Chord</button>
+    <button id="fbSection" class="tool-btn">Section</button>
+  </div>
   <nav id="mobileNav" class="mobile-nav hidden">
     <button data-panel="lyrics" class="mnav-btn active">🎵 Lyrics</button>
     <button data-panel="chords" class="mnav-btn">🎸 Chords</button>
@@ -305,6 +321,30 @@
       </div>
     </div>
   </div>
+  <div id="sectionPicker" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add Section</h2>
+        <button class="modal-close" onclick="closeSectionPicker()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="cpSections" class="cp-grid cp-suffixes"></div>
+      </div>
+    </div>
+  </div>
+  <div id="tabPicker" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Insert Tab</h2>
+        <button class="modal-close" onclick="closeTabPicker()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="cpTabs" class="cp-grid cp-suffixes"></div>
+      </div>
+    </div>
+  </div>
+
+
 
 
   <input type="file" id="importFileInput" accept=".json" style="display:none">
